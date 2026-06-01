@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
   <link rel="stylesheet" href="./Style/Style.css">
+  <link rel="stylesheet" href="./Style/cart.css">
+  <script type="module" src="./js/supabase-config.js"></script>
+  <script type="module" src="./js/cart.js"></script>
   </head>
   <body>
     <header>
@@ -19,6 +22,7 @@
             <li class="current"><a href="index.html">Home</a></li>
             <li><a href="about.html">About</a></li>
             <li><a href="services.html">Services</a></li>
+            <li><a href="pricing.html">Pricing</a></li>
             <li><a href="contact.html">Contact Us</a></li>
           </ul>
         </nav>
@@ -38,13 +42,63 @@
     <section id="newsletter">
       <div class="container">
         <h1>Subscribe To Our Newsletter</h1>
-        <form>
-          <input type="email" placeholder="Enter Email..." required>
+        <form id="newsletter-form">
+          <input type="email" id="newsletter-email" placeholder="Enter Email..." required>
           <button type="submit" class="button_1">Subscribe</button>
         </form>
       </div>
     </section>
-<!-- Adding boxes and images -->
+<!-- Trust Badges & Guarantees -->
+    <section id="trust-badges">
+      <div class="container">
+        <div class="trust-grid">
+          <div class="trust-item">
+            <div class="trust-icon">
+              <i class="fas fa-leaf"></i>
+            </div>
+            <h4>100% Natural</h4>
+            <p>Pure herbal remedies with no artificial additives, chemicals, or preservatives</p>
+          </div>
+          <div class="trust-item">
+            <div class="trust-icon">
+              <i class="fas fa-truck"></i>
+            </div>
+            <h4>Free Delivery</h4>
+            <p>Free shipping on all orders within Ilorin. Fast and reliable delivery service</p>
+          </div>
+          <div class="trust-item">
+            <div class="trust-icon">
+              <i class="fas fa-hand-holding-heart"></i>
+            </div>
+            <h4>Satisfaction Guaranteed</h4>
+            <p>Not happy with your order? We'll make it right or your money back</p>
+          </div>
+          <div class="trust-item">
+            <div class="trust-icon">
+              <i class="fas fa-quran"></i>
+            </div>
+            <h4>Sunnah Inspired</h4>
+            <p>All remedies are rooted in prophetic medicine (Tibb an-Nabawi) tradition</p>
+          </div>
+          <div class="trust-item">
+            <div class="trust-icon">
+              <i class="fas fa-star"></i>
+            </div>
+            <h4>Premium Quality</h4>
+            <p>Hand-selected products, carefully sourced for maximum potency and purity</p>
+          </div>
+          <div class="trust-item">
+            <div class="trust-icon">
+              <i class="fas fa-lock"></i>
+            </div>
+            <h4>Secure Ordering</h4>
+            <p>Your information is protected. Safe and confidential checkout process</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Adding boxes and images -->
     <section id="boxes">
       <div class="container">
         <div class="box">
@@ -52,6 +106,9 @@
           <h3>Raw Honey</h3>
           <p> It kills Unwanted yeast, improves the color and texture, removes any crystallization
             and it extends the shelf life.</p>
+          <button class="add-to-cart-btn" data-product-id="raw-honey" data-product-name="Raw Honey" data-product-price="₦5,000 / bottle" data-product-price-raw="5000" data-product-image="./image/honey.jpg">
+            <i class="fas fa-cart-plus"></i> Add to Cart
+          </button>
         </div>
         <div class="box">
           <img src="./image/ginger.jpg">
@@ -59,6 +116,9 @@
           <p> It has been used to aid digestion, reduce nausea and help fight against the flu
             and common cold to name a few of its purpose.
           </p>
+          <button class="add-to-cart-btn" data-product-id="ginger" data-product-name="Ginger" data-product-price="₦3,500 / pack" data-product-price-raw="3500" data-product-image="./image/ginger.jpg">
+            <i class="fas fa-cart-plus"></i> Add to Cart
+          </button>
         </div>
         <div class="box">
           <img src="./image/coconut.webp" width="200px">
@@ -66,12 +126,75 @@
           <p> Coconut is highly nutritious, riches in fiber and packed with essential
             vitamins and minerals from culinary creations to magic beauty portions.
           </p>
+          <button class="add-to-cart-btn" data-product-id="coconut" data-product-name="Coconut Oil" data-product-price="₦4,500 / jar" data-product-price-raw="4500" data-product-image="./image/coconut.webp">
+            <i class="fas fa-cart-plus"></i> Add to Cart
+          </button>
         </div>
       </div>
     </section>
 
     <footer>
-      <p> &trade; Husayn ProHerbal Medicine Copyright &copy;</p>
+      <p> &trade; Husayn ProHerbal Medicine Copyright &copy; 2024</p>
     </footer>
+
+    <script type="module">
+      import { supabaseClient } from './js/supabase-config.js';
+      import { addToCart, openCart } from './js/cart.js';
+
+      // Newsletter form submission via Supabase
+      const form = document.getElementById('newsletter-form');
+      if (form) {
+        form.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          const emailInput = document.getElementById('newsletter-email');
+          const email = emailInput.value.trim();
+          const btn = form.querySelector('.button_1');
+          btn.disabled = true;
+          btn.innerHTML = 'Subscribing...';
+          
+          try {
+            const { error } = await supabaseClient
+              .from('newsletter_subscribers')
+              .insert([{ email }]);
+            if (error) {
+              if (error.code === '23505') {
+                alert('This email is already subscribed!');
+              } else {
+                alert('Subscription failed: ' + error.message);
+              }
+            } else {
+              alert('Thank you! You have been subscribed successfully.');
+              emailInput.value = '';
+            }
+          } catch (err) {
+            alert('An error occurred. Please try again later.');
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Subscribe';
+          }
+        });
+      }
+
+      // Add to Cart buttons on home page product boxes
+      document.querySelectorAll('.box .add-to-cart-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const product = {
+            id: this.dataset.productId,
+            name: this.dataset.productName,
+            price: this.dataset.productPrice,
+            priceRaw: this.dataset.productPriceRaw,
+            image_url: this.dataset.productImage
+          };
+          addToCart(product);
+          const originalHTML = this.innerHTML;
+          this.innerHTML = '<i class="fas fa-check"></i> Added!';
+          this.classList.add('added');
+          setTimeout(() => {
+            this.innerHTML = originalHTML;
+            this.classList.remove('added');
+          }, 1500);
+        });
+      });
+    </script>
   </body>
 </html>

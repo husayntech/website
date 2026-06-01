@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
   <link rel="stylesheet" href="./Style/Style.css">
+  <link rel="stylesheet" href="./Style/cart.css">
+  <script type="module" src="./js/supabase-config.js"></script>
+  <script type="module" src="./js/cart.js"></script>
   </head>
   <body>
     <header>
@@ -17,6 +20,7 @@
             <li><a href="index.html">Home</a></li>
             <li><a href="about.html">About</a></li>
             <li class="current"><a href="services.html">Services</a></li>
+            <li><a href="pricing.html">Pricing</a></li>
             <li><a href="contact.html">Contact Us</a></li>
           </ul>
         </nav>
@@ -26,8 +30,8 @@
     <section id="newsletter">
       <div class="container">
         <h1>Subscribe To Our Newsletter</h1>
-        <form>
-          <input type="email" placeholder="Enter Email..." required>
+        <form id="newsletter-form">
+          <input type="email" id="newsletter-email" placeholder="Enter Email..." required>
           <button type="submit" class="button_1">Subscribe</button>
         </form>
       </div>
@@ -36,7 +40,7 @@
     <section id="main">
       <div class="container">
         <article id="main-col">
-          <h1 class="page-title"><h1>SERVICES</h1></h1>
+          <h1 class="page-title">SERVICES</h1>
           <ul id="services">
             <li>
               <h3>Preserving Good Health.</h3>
@@ -56,7 +60,7 @@
             </li>
 
             <li>
-              <h3>Ridding the body off harmful substances.
+              <h3>Ridding the body off harmful substances.</h3>
               <p> &ensp; Almighty God has allowed the sick person to use clean earth surface instead 
                 of water to perform their ablution for prayer, this spares his body from the 
                 repercussion of using water while ill.
@@ -68,22 +72,22 @@
         <aside id="sidebar">
           <div class="dark">
             <h3>Reach out to us!!!</h3>
-            <form class="quote">
+            <form class="quote" id="contact-form">
   						<div>
   							<label>Name</label><br>
-  							<input type="text" placeholder="Name">
+  							<input type="text" id="contact-name" placeholder="Name" required>
   						</div>
               <br>
 
   						<div>
   							<label>Email</label><br>
-  							<input type="email" placeholder="Email Address">
+  							<input type="email" id="contact-email" placeholder="Email Address" required>
   						</div>
               <br> 
 
   						<div>
   							<label>Message</label><br>
-  							<textarea placeholder="Message"></textarea>
+  							<textarea id="contact-message" placeholder="Message" required></textarea>
   						</div>
               <br>
               
@@ -95,7 +99,76 @@
     </section>
 
     <footer>
-      <p> &trade; Husayn ProHerbal Medicine Copyright &copy;</p>
+      <p> &trade; Husayn ProHerbal Medicine Copyright &copy; 2024</p>
     </footer>
+
+    <script type="module">
+      import { supabaseClient } from './js/supabase-config.js';
+
+      // Newsletter form submission via Supabase
+      const newsletterForm = document.getElementById('newsletter-form');
+      if (newsletterForm) {
+        newsletterForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          const emailInput = document.getElementById('newsletter-email');
+          const email = emailInput.value.trim();
+          const btn = newsletterForm.querySelector('.button_1');
+          btn.disabled = true;
+          btn.innerHTML = 'Subscribing...';
+          
+          try {
+            const { error } = await supabaseClient
+              .from('newsletter_subscribers')
+              .insert([{ email }]);
+            if (error) {
+              if (error.code === '23505') {
+                alert('This email is already subscribed!');
+              } else {
+                alert('Subscription failed: ' + error.message);
+              }
+            } else {
+              alert('Thank you! You have been subscribed successfully.');
+              emailInput.value = '';
+            }
+          } catch (err) {
+            alert('An error occurred. Please try again later.');
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Subscribe';
+          }
+        });
+      }
+
+      // Contact form submission via Supabase
+      const contactForm = document.getElementById('contact-form');
+      if (contactForm) {
+        contactForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          const name = document.getElementById('contact-name').value.trim();
+          const email = document.getElementById('contact-email').value.trim();
+          const message = document.getElementById('contact-message').value.trim();
+          const btn = contactForm.querySelector('.button_1');
+          btn.disabled = true;
+          btn.innerHTML = 'Sending...';
+          
+          try {
+            const { error } = await supabaseClient
+              .from('contact_messages')
+              .insert([{ name, email, message }]);
+            if (error) {
+              alert('Failed to send message: ' + error.message);
+            } else {
+              alert('Thank you! Your message has been sent successfully.');
+              contactForm.reset();
+            }
+          } catch (err) {
+            alert('An error occurred. Please try again later.');
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Send';
+          }
+        });
+      }
+    </script>
   </body>
 </html>

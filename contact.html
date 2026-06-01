@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
   <link rel="stylesheet" href="./Style/Style.css">
+  <link rel="stylesheet" href="./Style/cart.css">
+  <script type="module" src="./js/supabase-config.js"></script>
+  <script type="module" src="./js/cart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" 
   integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" 
   crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -20,8 +23,8 @@
             <li><a href="index.html">Home</a></li>
             <li><a href="about.html">About</a></li>
             <li><a href="services.html">Services</a></li>
+            <li><a href="pricing.html">Pricing</a></li>
             <li class="current"><a href="contact.html">Contact Us</a></li>
-            
           </ul>
         </nav>
       </div>
@@ -31,8 +34,8 @@
      <section id="newsletter">
       <div class="container">
         <h1>Subscribe To Our Newsletter</h1>
-        <form>
-          <input type="email" placeholder="Enter Email..." required>
+        <form id="newsletter-form">
+          <input type="email" id="newsletter-email" placeholder="Enter Email..." required>
           <button type="submit" class="button_1">Subscribe</button>
         </form>
       </div>
@@ -59,25 +62,69 @@
             <div class="media">
 
                 <h1>
-                  <i class="fa-brands fa-facebook"></i>
-                &ensp;
-                <i><i class="fa-brands fa-twitter"></i>
-                &ensp;
-                <i class="fa-brands fa-instagram"></i>
-                &ensp;
-                <i class="fa-brands fa-whatsapp"></i>
-                &ensp;
-                <i class="fa-brands fa-telegram"></i>
-                &ensp; 
-                <i class="fa-brands fa-linkedin"></i>
-
+                  <a href="https://facebook.com/" target="_blank" rel="noopener" title="Facebook">
+                    <i class="fa-brands fa-facebook"></i>
+                  </a>
+                  <a href="https://twitter.com/" target="_blank" rel="noopener" title="Twitter">
+                    <i class="fa-brands fa-twitter"></i>
+                  </a>
+                  <a href="https://instagram.com/" target="_blank" rel="noopener" title="Instagram">
+                    <i class="fa-brands fa-instagram"></i>
+                  </a>
+                  <a href="https://wa.me/2348103300529" target="_blank" rel="noopener" title="WhatsApp">
+                    <i class="fa-brands fa-whatsapp"></i>
+                  </a>
+                  <a href="https://t.me/" target="_blank" rel="noopener" title="Telegram">
+                    <i class="fa-brands fa-telegram"></i>
+                  </a>
+                  <a href="https://linkedin.com/" target="_blank" rel="noopener" title="LinkedIn">
+                    <i class="fa-brands fa-linkedin"></i>
+                  </a>
                 </h1>                
             </div>
             
         </div>
     </div>
     <footer>
-      <p> &trade; Husayn ProHerbal Medicine Copyright &copy;</p>
+      <p> &trade; Husayn ProHerbal Medicine Copyright &copy; 2024</p>
     </footer>
+
+    <script type="module">
+      import { supabaseClient } from './js/supabase-config.js';
+
+      // Newsletter form submission via Supabase
+      const form = document.getElementById('newsletter-form');
+      if (form) {
+        form.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          const emailInput = document.getElementById('newsletter-email');
+          const email = emailInput.value.trim();
+          const btn = form.querySelector('.button_1');
+          btn.disabled = true;
+          btn.innerHTML = 'Subscribing...';
+          
+          try {
+            const { error } = await supabaseClient
+              .from('newsletter_subscribers')
+              .insert([{ email }]);
+            if (error) {
+              if (error.code === '23505') {
+                alert('This email is already subscribed!');
+              } else {
+                alert('Subscription failed: ' + error.message);
+              }
+            } else {
+              alert('Thank you! You have been subscribed successfully.');
+              emailInput.value = '';
+            }
+          } catch (err) {
+            alert('An error occurred. Please try again later.');
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Subscribe';
+          }
+        });
+      }
+    </script>
 </body>
 </html>
