@@ -46,7 +46,7 @@ export function addToCart(product) {
       id: product.id,
       name: product.name,
       price: product.price,
-      priceRaw: product.priceRaw || extractPrice(product.price),
+      priceRaw: (product.priceRaw && !isNaN(parseFloat(product.priceRaw)) && parseFloat(product.priceRaw) > 0) ? product.priceRaw : extractPrice(product.price),
       image_url: product.image_url || './image/proherbal.jpg',
       quantity: 1
     });
@@ -311,11 +311,17 @@ async function handleCheckoutSubmit(e) {
 
     if (error) throw error;
 
+    // Compute total before clearing cart!
+    const orderTotal = formatPrice(getCartTotal());
+    
     // Success!
     clearCart();
     closeCheckoutModal();
     closeCart();
     showSuccessMessage(name);
+    
+    // Send order notification to admin WhatsApp (total already computed above)
+    sendWhatsAppOrderNotification(name, email, phone, address, notes, cart, orderTotal);
   } catch (err) {
     showCheckoutError('Failed to place order: ' + err.message);
   } finally {
@@ -323,6 +329,31 @@ async function handleCheckoutSubmit(e) {
     submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Place Order';
     isSubmitting = false;
   }
+}
+
+function sendWhatsAppOrderNotification(customerName, customerEmail, customerPhone, customerAddress, notes, cartItems, total) {
+  // Format order details into a WhatsApp message
+  const adminPhone = '2348103300529';
+  
+  let itemsList = '';
+  cartItems.forEach((item, index) => {
+    itemsList += `${index + 1}. ${item.name} × ${item.quantity} = ${item.price}\n`;
+  });
+  
+  const message = encodeURIComponent(
+    `🆕 *New Order Received!*\n\n` +
+    `👤 *Customer:* ${customerName}\n` +
+    `📧 *Email:* ${customerEmail}\n` +
+    `${customerPhone ? `📞 *Phone:* ${customerPhone}\n` : ''}` +
+    `${customerAddress ? `📍 *Address:* ${customerAddress}\n` : ''}` +
+    `\n📋 *Order Details:*\n${itemsList}\n` +
+    `💰 *Total:* ${total}\n` +
+    `${notes ? `📝 *Notes:* ${notes}\n` : ''}` +
+    `\nPlease confirm and process this order.`
+  );
+  
+  // Open WhatsApp with the pre-filled message
+  window.open(`https://wa.me/${adminPhone}?text=${message}`, '_blank');
 }
 
 function showSuccessMessage(customerName) {
@@ -432,6 +463,8 @@ export function updateCartDisplay() {
 
 export function openCart() {
   renderCartSidebar();
+  // Always refresh the cart display with latest data before showing
+  updateCartDisplay();
   const overlay = document.getElementById('cart-overlay');
   if (overlay) {
     requestAnimationFrame(() => overlay.classList.add('active'));
@@ -472,6 +505,11 @@ export function createCartFAB() {
     if (badge) {
       badge.textContent = e.detail.count;
       badge.style.display = e.detail.count > 0 ? 'flex' : 'none';
+    }
+    // If the cart sidebar is already open, refresh its content live
+    const overlay = document.getElementById('cart-overlay');
+    if (overlay && overlay.classList.contains('active')) {
+      updateCartDisplay();
     }
   });
 

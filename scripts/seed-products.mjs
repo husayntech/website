@@ -34,7 +34,7 @@ const products = [
     price: '₦4,500 / jar',
     price_raw: 4500,
     category: 'Oil',
-    image_url: './image/coconut.webp',
+    image_url: './image/coconut.jpg',
     description: 'Pure virgin coconut oil, packed with essential vitamins and minerals for health and beauty.',
     features: 'Highly nutritious & rich in fiber, Great for cooking & skincare, Boosts metabolism, 500ml jar'
   },
@@ -43,7 +43,7 @@ const products = [
     price: '₦6,000 / bottle',
     price_raw: 6000,
     category: 'Oil',
-    image_url: './image/proherbal.jpg',
+    image_url: './image/black-seed-oil.jpg',
     description: 'Cold-pressed black seed (Nigella Sativa) oil — "the remedy for everything but death" as taught by the Prophet (S.A.W).',
     features: 'Supports immune system, Anti-inflammatory properties, Promotes healthy skin & hair, 250ml bottle'
   },
@@ -52,7 +52,7 @@ const products = [
     price: '₦3,000 / pack',
     price_raw: 3000,
     category: 'Tea',
-    image_url: './image/ginger.jpg',
+    image_url: './image/herbal-tea.jpg',
     description: 'A soothing blend of prophetic herbs including ginger, honey, and natural spices for daily wellness.',
     features: 'All-natural ingredients, Calming & restorative, Caffeine-free, 20 tea bags'
   },
@@ -61,7 +61,7 @@ const products = [
     price: '₦7,000 / combo',
     price_raw: 7000,
     category: 'Honey',
-    image_url: './image/honey.jpg',
+    image_url: './image/honey-ginger-mix.jpg',
     description: 'A powerful combination of raw honey and ginger extract — our most popular remedy for colds and flu.',
     features: 'Double the healing power, Soothes sore throat, Boosts immune system, 500ml bottle'
   }

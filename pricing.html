@@ -116,7 +116,7 @@
   </section>
 
   <footer>
-    <p> &trade; Husayn ProHerbal Medicine Copyright &copy; 2024</p>
+    <p> &trade; Husayn ProHerbal Medicine Copyright &copy; 2026</p>
   </footer>
 
   <!-- Load products from Supabase dynamically -->
@@ -161,7 +161,7 @@
         name: 'Coconut Oil',
         price: '\u20A64,500 / jar',
         priceRaw: '4500',
-        image_url: './image/coconut.webp',
+        image_url: './image/coconut.jpg',
         description: 'Pure virgin coconut oil, cold-pressed to preserve every nutrient. Packed with essential fatty acids for cooking, skincare, haircare, and overall wellness.',
         features: 'Cold-pressed virgin quality, Rich in healthy MCT fats, Great for cooking & baking, Deeply moisturizes skin & hair, Boosts metabolism & energy, 500ml glass jar'
       },
@@ -169,7 +169,7 @@
         name: 'Black Seed Oil',
         price: '\u20A66,000 / bottle',
         priceRaw: '6000',
-        image_url: './image/proherbal.jpg',
+        image_url: './image/black-seed-oil.jpg',
         description: 'Cold-pressed black seed oil — the Prophet (S.A.W) described it as "the remedy for everything but death." Packed with thymoquinone for immune support and anti-inflammatory power.',
         features: '"Remedy for everything but death" (Hadith), Rich in thymoquinone antioxidant, Supports immune system function, Powerful anti-inflammatory, Promotes healthy skin & hair, 250ml dark glass bottle'
       },
@@ -177,7 +177,7 @@
         name: 'Herbal Tea Blend',
         price: '\u20A63,000 / pack',
         priceRaw: '3000',
-        image_url: './image/ginger.jpg',
+        image_url: './image/herbal-tea.jpg',
         description: 'A masterfully blended tisane of prophetic herbs — ginger, honey notes, cinnamon, and natural spices. Caffeine-free, soothing, and warming for daily wellness.',
         features: 'All-natural prophetic herb blend, Soothing & restorative, Caffeine-free (enjoy anytime), Aids digestion naturally, Rich in warming spices, 20 tea bags per pack'
       },
@@ -185,7 +185,7 @@
         name: 'Honey & Ginger Mix',
         price: '\u20A67,000 / combo',
         priceRaw: '7000',
-        image_url: './image/honey.jpg',
+        image_url: './image/honey-ginger-mix.jpg',
         description: 'Our signature blend — the ultimate synergy of raw honey and concentrated ginger extract. Our most popular remedy for colds, flu, and everyday immune support.',
         features: 'Double the healing power (honey + ginger), Soothes sore throat instantly, Boosts immune system naturally, Fights cold & flu symptoms, Rich in antioxidants, 500ml bottle'
       },
@@ -193,7 +193,7 @@
         name: 'Premium Dates (Tamar)',
         price: '\u20A64,500 / pack',
         priceRaw: '4500',
-        image_url: './image/proherbal.jpg',
+        image_url: './image/dates.jpg',
         description: 'Premium dates — the beloved fruit of the Prophet (S.A.W). Hand-selected for rich, caramel sweetness. Packed with natural energy, fiber, potassium, and magnesium.',
         features: 'The Prophet\'s (S.A.W) favorite fruit, Rich in natural energy & fiber, Packed with potassium & magnesium, Supports digestive health, Perfect for Iftar & daily snacks, 1kg premium pack'
       },
@@ -201,7 +201,7 @@
         name: 'Pure Olive Oil (Zaitun)',
         price: '\u20A68,000 / bottle',
         priceRaw: '8000',
-        image_url: './image/proherbal.jpg',
+        image_url: './image/olive-oil.jpg',
         description: 'Extra virgin olive oil from the blessed olive tree mentioned in the Qur\'an. Cold-pressed for heart health, glowing skin, and longevity — a prophetic medicine staple.',
         features: 'Extra virgin, cold-pressed, Supports heart & cardiovascular health, Rich in antioxidants & polyphenols, Mentioned in the Qur\'an, Promotes glowing skin, 500ml dark glass bottle'
       },
@@ -209,7 +209,7 @@
         name: 'Organic Moringa Powder',
         price: '\u20A63,500 / pack',
         priceRaw: '3500',
-        image_url: './image/proherbal.jpg',
+        image_url: './image/moringa.jpg',
         description: 'Nature\'s most nutrient-dense superfood — "The Miracle Tree." 90+ nutrients including more vitamin C than oranges, more calcium than milk, and more iron than spinach.',
         features: '90+ nutrients in one superfood, More vitamin C than oranges, More calcium than milk, More iron than spinach, Natural energy & vitality booster, 250g powder pack'
       },
@@ -217,7 +217,7 @@
         name: 'Natural Frankincense (Luban)',
         price: '\u20A65,000 / pack',
         priceRaw: '5000',
-        image_url: './image/proherbal.jpg',
+        image_url: './image/frankincense.jpg',
         description: 'Premium frankincense resin — one of the most treasured aromatic resins. Burn to purify your space, uplift your spirit, and create a calm, meditative atmosphere.',
         features: 'Premium hand-selected resin, Aromatic & spiritually uplifting, Creates calm meditative atmosphere, Natural air purifier, Supports immune function, 100g pure resin pack'
       },
@@ -225,7 +225,7 @@
         name: 'Natural Sidr Leaves Powder',
         price: '\u20A63,000 / pack',
         priceRaw: '3000',
-        image_url: './image/proherbal.jpg',
+        image_url: './image/sidr-powder.jpg',
         description: 'Pure Sidr (Lote Tree) leaf powder mentioned in the Qur\'an. A traditional natural cleanser that nourishes hair, soothes skin, and is completely chemical-free.',
         features: 'Mentioned in the Qur\'an (Sidrat al-Muntaha), Natural gentle cleanser, Nourishes & strengthens hair, Soothes skin conditions, Chemical-free & natural, 200g powder pack'
       },
@@ -233,18 +233,49 @@
         name: 'Black Seed Honey Blend',
         price: '\u20A67,500 / bottle',
         priceRaw: '7500',
-        image_url: './image/honey.jpg',
+        image_url: './image/black-seed-honey.jpg',
         description: 'The ultimate prophetic wellness duo — raw honey infused with black seed oil. Two of the most revered remedies combined for unmatched immune support and daily wellness.',
         features: 'Double prophetic remedy (honey + black seed), Unmatched immune system support, Natural anti-inflammatory formula, Daily wellness protection, Rich in antioxidants, 500ml bottle'
       }
     ];
 
-    function renderCard(product, isFeatured) {
+    // Immediate render of default products for instant cart functionality
+    function renderDefaultProducts() {
+      const grid = document.querySelector('.pricing-grid');
+      if (!grid) return;
+      grid.innerHTML = defaultProducts.map(dp => renderCard(dp)).join('');
+      attachCartListeners(grid);
+    }
+
+    function attachCartListeners(grid) {
+      grid.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const product = {
+            id: this.dataset.productId,
+            name: this.dataset.productName,
+            price: this.dataset.productPrice,
+            priceRaw: this.dataset.productPriceRaw,
+            image_url: this.dataset.productImage
+          };
+          addToCart(product);
+          
+          // Visual feedback
+          const originalHTML = this.innerHTML;
+          this.innerHTML = '<i class="fas fa-check"></i> Added!';
+          this.classList.add('added');
+          setTimeout(() => {
+            this.innerHTML = originalHTML;
+            this.classList.remove('added');
+          }, 1500);
+        });
+      });
+    }
+
+    function renderCard(product) {
       const features = product.features ? product.features.split(',').map(f => f.trim()).filter(f => f) : [];
       const productId = product.id || slugify(product.name);
       return `
-        <div class="pricing-card${isFeatured ? ' featured' : ''}">
-          ${isFeatured ? '<div class="card-badge">Featured</div>' : ''}
+        <div class="pricing-card">
           <div class="card-header">
             <h3>${escapeHtml(product.name)}</h3>
             <div class="price">${escapeHtml(product.price || '')}</div>
@@ -273,6 +304,10 @@
       const grid = document.querySelector('.pricing-grid');
       if (!grid) return;
 
+      // Show default products immediately so users can add to cart right away
+      renderDefaultProducts();
+
+      // Then fetch from DB in the background to update with any additional products
       try {
         const { data: products, error } = await supabaseClient
           .from('products')
@@ -284,47 +319,22 @@
         // Build a set of existing DB product names to avoid duplicates
         const dbNames = new Set((products || []).map(p => p.name));
 
-        // Render DB products first
-        let html = (products || []).map((p, index) => renderCard(p, index === 0)).join('');
-
-        // Then add hardcoded defaults that don't already exist in the DB
+        // Render DB products first, then add defaults that don't exist in DB
+        let html = (products || []).map(p => renderCard(p)).join('');
         html += defaultProducts
           .filter(dp => !dbNames.has(dp.name))
-          .map(dp => renderCard(dp, false))
+          .map(dp => renderCard(dp))
           .join('');
 
         grid.innerHTML = html;
-
-        // Attach add-to-cart event listeners
-        grid.querySelectorAll('.add-to-cart-btn').forEach(btn => {
-          btn.addEventListener('click', function() {
-            const product = {
-              id: this.dataset.productId,
-              name: this.dataset.productName,
-              price: this.dataset.productPrice,
-              priceRaw: this.dataset.productPriceRaw,
-              image_url: this.dataset.productImage
-            };
-            addToCart(product);
-            
-            // Visual feedback
-            const originalHTML = this.innerHTML;
-            this.innerHTML = '<i class="fas fa-check"></i> Added!';
-            this.classList.add('added');
-            setTimeout(() => {
-              this.innerHTML = originalHTML;
-              this.classList.remove('added');
-            }, 1500);
-          });
-        });
+        attachCartListeners(grid);
       } catch (err) {
         console.error('Failed to load products from database:', err);
-        // Show hardcoded products as fallback (first one gets featured)
-        grid.innerHTML = defaultProducts.map((dp, i) => renderCard(dp, i === 0)).join('');
+        // Default products are already shown from the immediate render above
       }
     }
 
-    // Load products when DOM is ready
+    // Load products — immediately shows defaults, then merges DB data
     loadProducts();
 
     // Newsletter form submission via Supabase

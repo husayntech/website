@@ -602,27 +602,6 @@ ul#services li p {
   box-shadow: var(--shadow-hover);
 }
 
-.pricing-card.featured {
-  border: 2px solid var(--gold);
-  transform: scale(1.03);
-  position: relative;
-}
-
-.pricing-card.featured:hover {
-  transform: scale(1.03) translateY(-8px);
-}
-
-.pricing-card .card-badge {
-  background: var(--gold);
-  color: var(--dark);
-  text-align: center;
-  padding: 6px 0;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
 .pricing-card .card-header {
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: var(--white);
@@ -814,14 +793,6 @@ footer {
 
   .pricing-grid {
     grid-template-columns: 1fr;
-  }
-
-  .pricing-card.featured {
-    transform: none;
-  }
-
-  .pricing-card.featured:hover {
-    transform: translateY(-8px);
   }
 
   .page-banner h1 {
