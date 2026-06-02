@@ -20,6 +20,44 @@ const BANK_DETAILS = {
 };
 
 // ============================================
+// Paystack Card Payment Configuration
+// ============================================
+
+// 🔑 Replace with YOUR Paystack public key
+// Sign up at https://paystack.com to get your key
+const PAYSTACK_PUBLIC_KEY = 'pk_test_YOUR_PAYSTACK_PUBLIC_KEY';
+
+function loadPaystackScript() {
+  return new Promise((resolve, reject) => {
+    if (window.PaystackPop) return resolve();
+    const script = document.createElement('script');
+    script.src = 'https://js.paystack.co/v1/inline.js';
+    script.async = true;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('Failed to load Paystack payment system'));
+    document.head.appendChild(script);
+  });
+}
+
+function openPaystackPayment(email, amount, onSuccess, onClose) {
+  const ref = 'PH-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+  const handler = PaystackPop.setup({
+    key: PAYSTACK_PUBLIC_KEY,
+    email: email,
+    amount: Math.round(amount) * 100, // Convert to kobo (smallest currency unit)
+    currency: 'NGN',
+    ref: ref,
+    callback: function(response) {
+      onSuccess(response.reference);
+    },
+    onClose: function() {
+      onClose();
+    }
+  });
+  handler.openIframe();
+}
+
+// ============================================
 // Cart CRUD
 // ============================================
 
@@ -206,6 +244,31 @@ function openCheckoutModal() {
             <label for="checkout-notes">Order Notes (optional)</label>
             <textarea id="checkout-notes" placeholder="Any special instructions..." rows="3"></textarea>
           </div>
+          <div class="payment-method-section">
+            <h4><i class="fas fa-credit-card"></i> Payment Method</h4>
+            <div class="payment-methods">
+              <label class="payment-method-option">
+                <input type="radio" name="payment_method" value="card" checked>
+                <span class="payment-method-label">
+                  <i class="fas fa-credit-card"></i>
+                  <span>
+                    <strong>Pay with Card</strong>
+                    <small>Visa, Mastercard, Verve — instant</small>
+                  </span>
+                </span>
+              </label>
+              <label class="payment-method-option">
+                <input type="radio" name="payment_method" value="transfer">
+                <span class="payment-method-label">
+                  <i class="fas fa-university"></i>
+                  <span>
+                    <strong>Bank Transfer</strong>
+                    <small>Pay via bank deposit</small>
+                  </span>
+                </span>
+              </label>
+            </div>
+          </div>
           <div class="checkout-total-bar">
             <span>Order Total:</span>
             <span class="checkout-total-amount" id="checkout-total-amount">₦0</span>
@@ -297,54 +360,141 @@ async function handleCheckoutSubmit(e) {
     return;
   }
 
+  // Get selected payment method
+  const paymentMethodEl = document.querySelector('input[name="payment_method"]:checked');
+  const paymentMethod = paymentMethodEl ? paymentMethodEl.value : 'transfer';
+
   const submitBtn = document.getElementById('checkout-submit-btn');
   submitBtn.disabled = true;
-  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Placing Order...';
+  
+  const orderTotalRaw = getCartTotal();
+  const orderTotal = formatPrice(orderTotalRaw);
 
-  try {
-    const { supabaseClient } = await import('./supabase-config.js');
-
-    const { error } = await supabaseClient
-      .from('orders')
-      .insert([{
-        customer_name: name,
-        customer_email: email,
-        customer_phone: phone || null,
-        customer_address: address || null,
-        items: cart.map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity
-        })),
-        total: formatPrice(getCartTotal()),
-        status: 'pending',
-        notes: notes || null
-      }]);
-
-    if (error) throw error;
-
-    // Compute total before clearing cart!
-    const orderTotal = formatPrice(getCartTotal());
+  if (paymentMethod === 'card') {
+    // Card payment flow
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
     
-    // Success!
-    clearCart();
-    closeCheckoutModal();
-    closeCart();
-    showSuccessMessage(name);
+    try {
+      const { supabaseClient } = await import('./supabase-config.js');
+
+      // Save order as pending_payment first
+      const { data: orderData, error: orderError } = await supabaseClient
+        .from('orders')
+        .insert([{
+          customer_name: name,
+          customer_email: email,
+          customer_phone: phone || null,
+          customer_address: address || null,
+          items: cart.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity
+          })),
+          total: orderTotal,
+          status: 'pending_payment',
+          payment_method: 'card',
+          notes: notes || null
+        }])
+        .select();
+
+      if (orderError) throw orderError;
+
+      const orderId = orderData?.[0]?.id;
+
+      // Load Paystack and open payment popup
+      await loadPaystackScript();
+
+      closeCheckoutModal();
+
+      openPaystackPayment(email, orderTotalRaw,
+        // On success
+        async function(paystackRef) {
+          // Update order status to paid
+          if (orderId) {
+            try {
+              await supabaseClient
+                .from('orders')
+                .update({ 
+                  status: 'paid',
+                  payment_ref: paystackRef,
+                  payment_method: 'card'
+                })
+                .eq('id', orderId);
+            } catch (updateErr) {
+              console.error('Failed to update order status:', updateErr);
+            }
+          }
+          
+          clearCart();
+          closeCart();
+          showSuccessMessage(name, true);
+          sendWhatsAppOrderNotification(name, email, phone, address, notes, cart, orderTotal, true);
+          isSubmitting = false;
+        },
+        // On close (user cancelled payment)
+        function() {
+          // Order stays as pending_payment — bank details shown as fallback
+          clearCart();
+          closeCart();
+          showSuccessMessage(name, false, true);
+          sendWhatsAppOrderNotification(name, email, phone, address, notes, cart, orderTotal, false);
+          isSubmitting = false;
+        }
+      );
+    } catch (err) {
+      showCheckoutError('Payment failed: ' + err.message);
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Place Order';
+      isSubmitting = false;
+    }
+  } else {
+    // Bank Transfer flow (original)
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Placing Order...';
     
-    // Send order notification to admin WhatsApp (total already computed above)
-    sendWhatsAppOrderNotification(name, email, phone, address, notes, cart, orderTotal);
-  } catch (err) {
-    showCheckoutError('Failed to place order: ' + err.message);
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Place Order';
-    isSubmitting = false;
+    try {
+      const { supabaseClient } = await import('./supabase-config.js');
+
+      const { error } = await supabaseClient
+        .from('orders')
+        .insert([{
+          customer_name: name,
+          customer_email: email,
+          customer_phone: phone || null,
+          customer_address: address || null,
+          items: cart.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity
+          })),
+          total: orderTotal,
+          status: 'pending',
+          payment_method: 'transfer',
+          notes: notes || null
+        }]);
+
+      if (error) throw error;
+      
+      // Success!
+      clearCart();
+      closeCheckoutModal();
+      closeCart();
+      showSuccessMessage(name);
+      
+      // Send order notification to admin WhatsApp
+      sendWhatsAppOrderNotification(name, email, phone, address, notes, cart, orderTotal, false);
+    } catch (err) {
+      showCheckoutError('Failed to place order: ' + err.message);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Place Order';
+      isSubmitting = false;
+    }
   }
 }
 
-function sendWhatsAppOrderNotification(customerName, customerEmail, customerPhone, customerAddress, notes, cartItems, total) {
+function sendWhatsAppOrderNotification(customerName, customerEmail, customerPhone, customerAddress, notes, cartItems, total, paid) {
   // Format order details into a WhatsApp message
   const adminPhone = '2348103300529';
   
@@ -353,11 +503,20 @@ function sendWhatsAppOrderNotification(customerName, customerEmail, customerPhon
     itemsList += `${index + 1}. ${item.name} × ${item.quantity} = ${item.price}\n`;
   });
   
-  // Format bank details
-  const bankText = BANK_DETAILS.accounts.map(acc => `   • ${acc.bank}: ${acc.number}`).join('\n');
+  const paidLabel = paid ? '✅ PAID (Card Payment)' : '⏳ PENDING (Bank Transfer)';
+  
+  // Format bank details (only if not paid via card)
+  let bankSection = '';
+  if (!paid) {
+    const bankText = BANK_DETAILS.accounts.map(acc => `   • ${acc.bank}: ${acc.number}`).join('\n');
+    bankSection = `\n--- Payment Instructions for Customer ---\n` +
+      `💳 *Account Name:* ${BANK_DETAILS.accountName}\n` +
+      `${bankText}\n`;
+  }
   
   const message = encodeURIComponent(
     `🆕 *New Order Received!*\n\n` +
+    `💳 *Payment:* ${paidLabel}\n\n` +
     `👤 *Customer:* ${customerName}\n` +
     `📧 *Email:* ${customerEmail}\n` +
     `${customerPhone ? `📞 *Phone:* ${customerPhone}\n` : ''}` +
@@ -365,52 +524,74 @@ function sendWhatsAppOrderNotification(customerName, customerEmail, customerPhon
     `\n📋 *Order Details:*\n${itemsList}\n` +
     `💰 *Total:* ${total}\n` +
     `${notes ? `📝 *Notes:* ${notes}\n` : ''}` +
-    `\n--- Payment Instructions for Customer ---\n` +
-    `💳 *Account Name:* ${BANK_DETAILS.accountName}\n` +
-    `${bankText}\n` +
-    `\nPlease confirm order and await payment confirmation from customer.`
+    `${bankSection}\n` +
+    `${paid ? '✅ Payment confirmed! Prepare order for delivery.' : 'Please confirm order and await payment confirmation from customer.'}`
   );
   
   // Open WhatsApp with the pre-filled message
   window.open(`https://wa.me/${adminPhone}?text=${message}`, '_blank');
 }
 
-function showSuccessMessage(customerName) {
+function showSuccessMessage(customerName, paid, paymentCancelled) {
   // Remove any existing success message
   const existing = document.getElementById('order-success-msg');
   if (existing) existing.remove();
 
-  const accountsHtml = BANK_DETAILS.accounts.map((acc, index) => `
-    <div class="payment-account">
-      <span class="payment-bank">${escapeHtml(acc.bank)}</span>
-      <span class="payment-number">${escapeHtml(acc.number)}</span>
-      <button class="copy-btn" onclick="copyAccountNumber('${escapeHtml(acc.number)}', this)" title="Copy account number">
-        <i class="fas fa-copy"></i>
-      </button>
-    </div>
-  `).join('');
+  let contentHtml;
+  
+  if (paid) {
+    // Card payment was successful
+    contentHtml = `
+      <div class="success-content">
+        <div class="success-icon paid"><i class="fas fa-check-circle"></i></div>
+        <h3>Payment Successful! 🎉</h3>
+        <p>Thank you, <strong>${escapeHtml(customerName)}</strong>!</p>
+        <p style="margin-top:8px;">Your payment was received successfully. We will process your order and get back to you shortly.</p>
+        <button class="button_1" onclick="this.closest('.order-success-msg').remove()">
+          <i class="fas fa-arrow-left"></i> Continue Shopping
+        </button>
+      </div>
+    `;
+  } else {
+    const accountsHtml = BANK_DETAILS.accounts.map(acc => `
+      <div class="payment-account">
+        <span class="payment-bank">${escapeHtml(acc.bank)}</span>
+        <span class="payment-number">${escapeHtml(acc.number)}</span>
+        <button class="copy-btn" onclick="copyAccountNumber('${escapeHtml(acc.number)}', this)" title="Copy account number">
+          <i class="fas fa-copy"></i>
+        </button>
+      </div>
+    `).join('');
+    
+    const title = paymentCancelled ? 'Payment Cancelled' : 'Order Placed Successfully!';
+    const subtitle = paymentCancelled 
+      ? 'Your order is saved. Please complete payment via bank transfer to confirm.'
+      : 'Thank you, <strong>' + escapeHtml(customerName) + '</strong>!';
+
+    contentHtml = `
+      <div class="success-content">
+        <div class="success-icon"><i class="fas fa-check-circle"></i></div>
+        <h3>${title}</h3>
+        <p>${subtitle}</p>
+        
+        <div class="payment-info">
+          <h4><i class="fas fa-money-bill-transfer"></i> Make Payment To:</h4>
+          <p class="payment-name">Account Name: <strong>${escapeHtml(BANK_DETAILS.accountName)}</strong></p>
+          ${accountsHtml}
+          <p class="payment-note">After payment, reply to your order confirmation email or WhatsApp with your payment receipt. We will confirm and process your order.</p>
+        </div>
+        
+        <button class="button_1" onclick="this.closest('.order-success-msg').remove()">
+          <i class="fas fa-arrow-left"></i> Continue Shopping
+        </button>
+      </div>
+    `;
+  }
 
   const msg = document.createElement('div');
   msg.id = 'order-success-msg';
   msg.className = 'order-success-msg';
-  msg.innerHTML = `
-    <div class="success-content">
-      <div class="success-icon"><i class="fas fa-check-circle"></i></div>
-      <h3>Order Placed Successfully!</h3>
-      <p>Thank you, <strong>${escapeHtml(customerName)}</strong>!</p>
-      
-      <div class="payment-info">
-        <h4><i class="fas fa-money-bill-transfer"></i> Make Payment To:</h4>
-        <p class="payment-name">Account Name: <strong>${escapeHtml(BANK_DETAILS.accountName)}</strong></p>
-        ${accountsHtml}
-        <p class="payment-note">After payment, reply to your order confirmation email or WhatsApp with your payment receipt. We will confirm and process your order.</p>
-      </div>
-      
-      <button class="button_1" onclick="this.closest('.order-success-msg').remove()">
-        <i class="fas fa-arrow-left"></i> Continue Shopping
-      </button>
-    </div>
-  `;
+  msg.innerHTML = contentHtml;
   document.body.appendChild(msg);
 }
 

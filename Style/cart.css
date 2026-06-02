@@ -710,6 +710,107 @@
   margin-top: 20px;
 }
 
+/* ===== Payment Method Selection ===== */
+.payment-method-section {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--cream-dark);
+}
+
+.payment-method-section h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  color: var(--dark);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.payment-method-section h4 i {
+  color: var(--gold);
+}
+
+.payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.payment-method-option {
+  display: block;
+  cursor: pointer;
+}
+
+.payment-method-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.payment-method-label {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border: 2px solid var(--cream-dark);
+  border-radius: var(--radius-sm);
+  background: var(--cream);
+  transition: var(--transition);
+}
+
+.payment-method-option input[type="radio"]:checked + .payment-method-label {
+  border-color: var(--gold);
+  background: rgba(201, 168, 76, 0.08);
+  box-shadow: 0 0 0 1px var(--gold);
+}
+
+.payment-method-label:hover {
+  border-color: var(--accent-light);
+  transform: translateX(3px);
+}
+
+.payment-method-label i {
+  font-size: 24px;
+  color: var(--primary);
+  width: 36px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.payment-method-option input[type="radio"]:checked + .payment-method-label i {
+  color: var(--gold);
+}
+
+.payment-method-label strong {
+  display: block;
+  font-size: 14px;
+  color: var(--dark);
+  margin-bottom: 2px;
+}
+
+.payment-method-label small {
+  display: block;
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+/* ===== Success Icon - Paid State ===== */
+.success-icon.paid {
+  background: rgba(45, 90, 39, 0.15);
+  animation: pulseCheck 0.6s ease;
+}
+
+.success-icon.paid i {
+  color: #2ecc71;
+}
+
+@keyframes pulseCheck {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 /* ===== Add to Cart Button on Product Cards ===== */
 .add-to-cart-btn {
   display: inline-flex;
