@@ -7,6 +7,19 @@ const CART_STORAGE_KEY = 'herbal-cart';
 const CART_OPEN_KEY = 'herbal-cart-open';
 
 // ============================================
+// Bank Payment Details
+// Shown to customers after order placement
+// ============================================
+const BANK_DETAILS = {
+  accountName: 'Sulyman Abdulrafiu Kehinde',
+  accounts: [
+    { bank: 'GTBank', number: '0451475685' },
+    { bank: 'Opay', number: '8103300529' },
+    { bank: 'Moniepoint', number: '8103300529' }
+  ]
+};
+
+// ============================================
 // Cart CRUD
 // ============================================
 
@@ -340,6 +353,9 @@ function sendWhatsAppOrderNotification(customerName, customerEmail, customerPhon
     itemsList += `${index + 1}. ${item.name} × ${item.quantity} = ${item.price}\n`;
   });
   
+  // Format bank details
+  const bankText = BANK_DETAILS.accounts.map(acc => `   • ${acc.bank}: ${acc.number}`).join('\n');
+  
   const message = encodeURIComponent(
     `🆕 *New Order Received!*\n\n` +
     `👤 *Customer:* ${customerName}\n` +
@@ -349,7 +365,10 @@ function sendWhatsAppOrderNotification(customerName, customerEmail, customerPhon
     `\n📋 *Order Details:*\n${itemsList}\n` +
     `💰 *Total:* ${total}\n` +
     `${notes ? `📝 *Notes:* ${notes}\n` : ''}` +
-    `\nPlease confirm and process this order.`
+    `\n--- Payment Instructions for Customer ---\n` +
+    `💳 *Account Name:* ${BANK_DETAILS.accountName}\n` +
+    `${bankText}\n` +
+    `\nPlease confirm order and await payment confirmation from customer.`
   );
   
   // Open WhatsApp with the pre-filled message
@@ -361,6 +380,16 @@ function showSuccessMessage(customerName) {
   const existing = document.getElementById('order-success-msg');
   if (existing) existing.remove();
 
+  const accountsHtml = BANK_DETAILS.accounts.map((acc, index) => `
+    <div class="payment-account">
+      <span class="payment-bank">${escapeHtml(acc.bank)}</span>
+      <span class="payment-number">${escapeHtml(acc.number)}</span>
+      <button class="copy-btn" onclick="copyAccountNumber('${escapeHtml(acc.number)}', this)" title="Copy account number">
+        <i class="fas fa-copy"></i>
+      </button>
+    </div>
+  `).join('');
+
   const msg = document.createElement('div');
   msg.id = 'order-success-msg';
   msg.className = 'order-success-msg';
@@ -368,8 +397,15 @@ function showSuccessMessage(customerName) {
     <div class="success-content">
       <div class="success-icon"><i class="fas fa-check-circle"></i></div>
       <h3>Order Placed Successfully!</h3>
-      <p>Thank you, <strong>${escapeHtml(customerName)}</strong>! We have received your order.</p>
-      <p>We will contact you via email or phone to confirm your order and arrange delivery.</p>
+      <p>Thank you, <strong>${escapeHtml(customerName)}</strong>!</p>
+      
+      <div class="payment-info">
+        <h4><i class="fas fa-money-bill-transfer"></i> Make Payment To:</h4>
+        <p class="payment-name">Account Name: <strong>${escapeHtml(BANK_DETAILS.accountName)}</strong></p>
+        ${accountsHtml}
+        <p class="payment-note">After payment, reply to your order confirmation email or WhatsApp with your payment receipt. We will confirm and process your order.</p>
+      </div>
+      
       <button class="button_1" onclick="this.closest('.order-success-msg').remove()">
         <i class="fas fa-arrow-left"></i> Continue Shopping
       </button>
@@ -537,6 +573,36 @@ export function createAddToCartHandler(product) {
 // ============================================
 // Utilities
 // ============================================
+
+// Make copy function globally accessible for onclick in success message
+window.copyAccountNumber = function(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const original = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i>';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = original;
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(() => {
+    // Fallback for older browsers
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    const original = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i>';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = original;
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+};
 
 function formatPrice(amount) {
   return '₦' + Math.round(amount).toLocaleString('en-NG');

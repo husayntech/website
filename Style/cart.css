@@ -605,6 +605,107 @@
   margin-bottom: 8px;
 }
 
+/* ===== Payment Info in Success Message ===== */
+.payment-info {
+  background: linear-gradient(135deg, var(--cream), var(--cream-dark));
+  border-radius: var(--radius);
+  padding: 20px;
+  margin: 15px 0;
+  text-align: left;
+  border: 2px solid var(--gold);
+}
+
+.payment-info h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  color: var(--primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.payment-info h4 i {
+  color: var(--gold);
+}
+
+.payment-name {
+  font-size: 14px !important;
+  color: var(--dark) !important;
+  margin-bottom: 12px !important;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.payment-account {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  background: var(--white);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(0,0,0,0.06);
+  transition: var(--transition);
+}
+
+.payment-account:hover {
+  transform: translateX(4px);
+  border-color: var(--gold);
+}
+
+.payment-bank {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.payment-number {
+  font-family: 'Courier New', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--dark);
+  letter-spacing: 1px;
+}
+
+.payment-note {
+  font-size: 12px !important;
+  color: var(--text-light) !important;
+  margin-top: 12px !important;
+  margin-bottom: 0 !important;
+  font-style: italic;
+  line-height: 1.6 !important;
+}
+
+.copy-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 2px solid var(--cream-dark);
+  background: var(--white);
+  color: var(--primary);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.copy-btn:hover {
+  border-color: var(--gold);
+  background: rgba(201, 168, 76, 0.1);
+  transform: scale(1.1);
+}
+
+.copy-btn.copied {
+  border-color: var(--primary);
+  background: rgba(45, 90, 39, 0.1);
+  color: var(--primary);
+}
+
 .success-content .button_1 {
   margin-top: 20px;
 }
