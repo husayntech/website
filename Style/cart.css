@@ -795,22 +795,6 @@
   color: var(--text-light);
 }
 
-/* ===== Success Icon - Paid State ===== */
-.success-icon.paid {
-  background: rgba(45, 90, 39, 0.15);
-  animation: pulseCheck 0.6s ease;
-}
-
-.success-icon.paid i {
-  color: #2ecc71;
-}
-
-@keyframes pulseCheck {
-  0% { transform: scale(0.8); opacity: 0; }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); opacity: 1; }
-}
-
 /* ===== Add to Cart Button on Product Cards ===== */
 .add-to-cart-btn {
   display: inline-flex;
