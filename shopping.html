@@ -151,6 +151,107 @@
     .modal-features li i { color: var(--primary-light); font-size: 14px; }
     .modal-add-btn { width: 100%; height: 50px; font-size: 15px; }
 
+    /* ===== Mobile Bottom Nav Bar ===== */
+    .mobile-bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: var(--primary-dark);
+      border-top: 2px solid rgba(201, 168, 76, 0.3);
+      z-index: 998;
+      padding: 0 10px;
+      align-items: center;
+      justify-content: space-around;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+    }
+    .mobile-bottom-nav a,
+    .mobile-bottom-nav button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.65);
+      font-size: 10px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: all 0.25s ease;
+      text-decoration: none;
+      position: relative;
+    }
+    .mobile-bottom-nav a:hover,
+    .mobile-bottom-nav button:hover,
+    .mobile-bottom-nav a.active,
+    .mobile-bottom-nav button.active {
+      color: var(--gold);
+      background: rgba(201, 168, 76, 0.1);
+    }
+    .mobile-bottom-nav i { font-size: 18px; }
+    .mobile-bottom-nav .bottom-nav-badge {
+      position: absolute;
+      top: 0;
+      right: 2px;
+      min-width: 15px;
+      height: 15px;
+      border-radius: 8px;
+      background: var(--gold);
+      color: var(--dark);
+      font-size: 9px;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0 3px;
+    }
+    .mobile-bottom-nav .bottom-nav-badge.visible { display: flex; }
+
+    /* ===== Back to Top Button ===== */
+    .back-to-top {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: none;
+      background: var(--gold);
+      color: var(--primary-dark);
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 997;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(20px);
+      transition: all 0.35s ease;
+      box-shadow: 0 4px 15px rgba(201, 168, 76, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .back-to-top.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    .back-to-top:hover {
+      background: var(--white);
+      color: var(--gold);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(201, 168, 76, 0.5);
+    }
+
+    @media (max-width: 768px) {
+      .mobile-bottom-nav { display: flex; }
+      footer { padding-bottom: 70px; }
+      .back-to-top { bottom: 80px; }
+    }
     @media (max-width: 480px) {
       header nav { width: 260px; }
       .shop-controls { flex-direction: column; }
@@ -321,6 +422,24 @@
       </div>
     </div>
   </div>
+
+  <!-- ===== Mobile Bottom Nav Bar ===== -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+    <a href="./index.html"><i class="fas fa-home"></i><span>Home</span></a>
+    <a href="./shopping.html" class="active"><i class="fas fa-store"></i><span>Shop</span></a>
+    <button id="mobile-cart-btn" aria-label="Open cart">
+      <i class="fas fa-shopping-cart"></i><span>Cart</span>
+      <span class="bottom-nav-badge" id="mobile-cart-badge">0</span>
+    </button>
+    <button id="mobile-menu-btn" aria-label="Open menu">
+      <i class="fas fa-bars"></i><span>Menu</span>
+    </button>
+  </nav>
+
+  <!-- ===== Back to Top Button ===== -->
+  <button class="back-to-top" id="back-to-top" aria-label="Back to top">
+    <i class="fas fa-arrow-up"></i>
+  </button>
 
   <!-- ===== FOOTER ===== -->
   <footer>
@@ -630,6 +749,65 @@
             </div>`;
           }).join('');
         } catch (err) { results.innerHTML = `<p style="text-align:center;color:#e74c3c;padding:20px;">Failed to track orders: ${err.message}</p>`; }
+      });
+    })();
+
+    // =============================================
+    // MOBILE BOTTOM NAV BAR
+    // =============================================
+    (function initMobileBottomNav() {
+      const mobileCartBtn = document.getElementById('mobile-cart-btn');
+      const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+      const mobileBadge = document.getElementById('mobile-cart-badge');
+      const mainNav = document.getElementById('main-nav');
+      const backdrop = document.getElementById('nav-backdrop');
+
+      if (mobileCartBtn) mobileCartBtn.addEventListener('click', openCart);
+
+      function getScrollbarWidth() { return window.innerWidth - document.documentElement.clientWidth; }
+
+      function closeSidebar() {
+        mainNav.classList.remove('open');
+        backdrop.classList.remove('active');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+      }
+
+      if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', () => {
+          if (mainNav.classList.contains('open')) {
+            closeSidebar();
+          } else {
+            mainNav.classList.add('open');
+            backdrop.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            document.body.style.paddingRight = getScrollbarWidth() + 'px';
+          }
+        });
+      }
+
+      function updateBadge() {
+        const count = getCartCount();
+        if (mobileBadge) {
+          mobileBadge.textContent = count;
+          mobileBadge.classList.toggle('visible', count > 0);
+        }
+      }
+      window.addEventListener('cart-updated', updateBadge);
+      updateBadge();
+    })();
+
+    // =============================================
+    // BACK TO TOP BUTTON
+    // =============================================
+    (function initBackToTop() {
+      const btn = document.getElementById('back-to-top');
+      if (!btn) return;
+      window.addEventListener('scroll', () => {
+        btn.classList.toggle('visible', window.scrollY > 400);
+      }, { passive: true });
+      btn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       });
     })();
   </script>
