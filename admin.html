@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin - Husayn ProHerbal Medicine</title>
+  <title>Admin Panel - Husayn ProHerbal Medicine</title>
+  <meta name="description" content="Admin panel for managing Husayn ProHerbal Medicine products, orders, and customers.">
+  <meta name="robots" content="noindex, nofollow">
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
   <link rel="stylesheet" href="./Style/Style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
@@ -93,6 +95,9 @@
             <button class="admin-tab active" data-tab="dashboard">
               <i class="fas fa-chart-pie"></i> Dashboard
             </button>
+            <button class="admin-tab" data-tab="categories">
+              <i class="fas fa-tags"></i> Categories
+            </button>
             <button class="admin-tab" data-tab="products">
               <i class="fas fa-box"></i> Products
             </button>
@@ -105,6 +110,9 @@
             <button class="admin-tab" data-tab="subscribers">
               <i class="fas fa-users"></i> Subscribers
             </button>
+            <a href="index.html" class="back-to-site-btn">
+              <i class="fas fa-external-link-alt"></i> View Site
+            </a>
             <button id="logout-btn" class="logout-btn">
               <i class="fas fa-sign-out-alt"></i> Logout
             </button>
@@ -166,6 +174,61 @@
       </div>
     </section>
 
+    <!-- Categories Tab -->
+    <section id="tab-categories" class="admin-tab-content">
+      <div class="container">
+        <div class="tab-header">
+          <h2 class="tab-title"><i class="fas fa-tags"></i> Category Management</h2>
+          <button id="add-category-btn" class="button_1">
+            <i class="fas fa-plus"></i> Add Category
+          </button>
+        </div>
+
+        <!-- Category Form -->
+        <div id="category-form-container" style="display: none;">
+          <form id="category-form" class="admin-form">
+            <h3 id="category-form-title">Add New Category</h3>
+            <input type="hidden" id="category-id">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="category-name">Category Name *</label>
+                <input type="text" id="category-name" placeholder="e.g. Honey, Spices, Oils" required>
+              </div>
+              <div class="form-group">
+                <label for="category-icon">Icon (FontAwesome class)</label>
+                <input type="text" id="category-icon" placeholder="e.g. fas fa-leaf">
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="button_1" id="category-save-btn">
+                <i class="fas fa-save"></i> Save Category
+              </button>
+              <button type="button" class="button_1 cancel-btn" id="category-cancel-btn">
+                <i class="fas fa-times"></i> Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+n        <!-- Categories Table -->
+        <div class="table-container">
+          <table class="admin-table" id="categories-table">
+            <thead>
+              <tr>
+                <th>Icon</th>
+                <th>Name</th>
+                <th>Products</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="categories-table-body">
+              <tr><td colspan="5" class="loading-text">Loading categories...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <!-- Products Tab -->
     <section id="tab-products" class="admin-tab-content">
       <div class="container">
@@ -194,7 +257,9 @@
             <div class="form-row">
               <div class="form-group">
                 <label for="product-category">Category</label>
-                <input type="text" id="product-category" placeholder="e.g. Honey, Spice, Oil">
+                <select id="product-category">
+                  <option value="">Select a category</option>
+                </select>
               </div>
               <div class="form-group">
                 <label for="product-image">Product Image</label>
@@ -359,6 +424,8 @@
     let messages = [];
     let subscribers = [];
     let orders = [];
+    let categories = [];
+    let categoryCounts = {};
 
     // --- DOM Elements ---
     const loginSection = document.getElementById('admin-login');
@@ -512,7 +579,8 @@
         document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active-tab'));
         document.getElementById('tab-' + this.dataset.tab).classList.add('active-tab');
         // Refresh data when switching tabs
-        if (this.dataset.tab === 'products') loadProducts();
+        if (this.dataset.tab === 'categories') loadCategories();
+        if (this.dataset.tab === 'products') { loadCategories(); loadProducts(); }
         if (this.dataset.tab === 'messages') loadMessages();
         if (this.dataset.tab === 'orders') loadOrders();
         if (this.dataset.tab === 'subscribers') loadSubscribers();
@@ -526,6 +594,7 @@
     async function loadAllData() {
       await Promise.all([
         loadStats(),
+        loadCategories(),
         loadRecentOrders(),
         loadRecentMessages(),
         loadRecentSubscribers()
@@ -887,6 +956,170 @@
         await loadStats();
       } catch (err) {
         showToast('Failed to delete product: ' + err.message, 'error');
+      }
+    };
+
+    // =============================================
+    // CATEGORIES CRUD
+    // =============================================
+
+    const categoryFormContainer = document.getElementById('category-form-container');
+    const categoryForm = document.getElementById('category-form');
+    const categoryFormTitle = document.getElementById('category-form-title');
+    const categoryIdInput = document.getElementById('category-id');
+    const categoryNameInput = document.getElementById('category-name');
+    const categoryIconInput = document.getElementById('category-icon');
+    const categorySaveBtn = document.getElementById('category-save-btn');
+    const categoryCancelBtn = document.getElementById('category-cancel-btn');
+    const addCategoryBtn = document.getElementById('add-category-btn');
+
+    async function loadCategories() {
+      const tbody = document.getElementById('categories-table-body');
+      tbody.innerHTML = '<tr><td colspan="5" class="loading-text">Loading categories...</td></tr>';
+      try {
+        const { data, error } = await supabaseClient
+          .from('categories')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        categories = data || [];
+        // Count products per category from DB
+        try {
+          const { data: prodData } = await supabaseClient
+            .from('products')
+            .select('category');
+          if (prodData) {
+            categoryCounts = {};
+            prodData.forEach(p => {
+              if (p.category) categoryCounts[p.category] = (categoryCounts[p.category] || 0) + 1;
+            });
+          }
+        } catch(e) { categoryCounts = {}; }
+        renderCategories();
+        populateCategoryDropdown();
+      } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-text">Categories table not found. Create a "categories" table in Supabase with columns: id (uuid), name (text), icon (text), created_at (timestamptz).</td></tr>';
+        categories = [];
+        categoryCounts = {};
+        populateCategoryDropdown();
+      }
+    }
+
+    function renderCategories() {
+      const tbody = document.getElementById('categories-table-body');
+      if (!categories.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-text">No categories yet. Click &quot;Add Category&quot; to create one.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = categories.map(c => `
+        <tr>
+          <td><i class="${escapeHtml(c.icon || 'fas fa-tag')}" style="font-size:18px;color:var(--gold);"></i></td>
+          <td><strong>${escapeHtml(c.name)}</strong></td>
+          <td><span class="price-tag">${(categoryCounts[c.name] || 0)} products</span></td>
+          <td class="date-cell">${formatDate(c.created_at)}</td>
+          <td class="actions-cell">
+            <button class="action-btn edit-btn" onclick="editCategory('${c.id}')" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="action-btn delete-btn" onclick="deleteCategory('${c.id}')" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function populateCategoryDropdown() {
+      const select = document.getElementById('product-category');
+      if (!select) return;
+      const currentValue = select.value;
+      select.innerHTML = '<option value="">Select a category</option>';
+      categories.forEach(c => {
+        select.innerHTML += `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`;
+      });
+      // Restore previous selection if it still exists
+      if (currentValue) select.value = currentValue;
+    }
+
+    function showCategoryForm(category = null) {
+      categoryFormContainer.style.display = 'block';
+      if (category) {
+        categoryFormTitle.textContent = 'Edit Category';
+        categoryIdInput.value = category.id;
+        categoryNameInput.value = category.name || '';
+        categoryIconInput.value = category.icon || '';
+        categorySaveBtn.innerHTML = '<i class="fas fa-save"></i> Update Category';
+      } else {
+        categoryFormTitle.textContent = 'Add New Category';
+        categoryIdInput.value = '';
+        categoryForm.reset();
+        categorySaveBtn.innerHTML = '<i class="fas fa-save"></i> Save Category';
+      }
+      categoryForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function hideCategoryForm() {
+      categoryFormContainer.style.display = 'none';
+      categoryForm.reset();
+      categoryIdInput.value = '';
+    }
+
+    addCategoryBtn.addEventListener('click', () => showCategoryForm());
+    categoryCancelBtn.addEventListener('click', hideCategoryForm);
+
+    categoryForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const isEdit = !!categoryIdInput.value;
+      const payload = {
+        name: categoryNameInput.value.trim(),
+        icon: categoryIconInput.value.trim() || 'fas fa-tag'
+      };
+      if (!payload.name) {
+        showToast('Category name is required.', 'error');
+        return;
+      }
+      categorySaveBtn.disabled = true;
+      try {
+        if (isEdit) {
+          const { error } = await supabaseClient
+            .from('categories')
+            .update(payload)
+            .eq('id', categoryIdInput.value);
+          if (error) throw error;
+          showToast('Category updated!');
+        } else {
+          const { error } = await supabaseClient
+            .from('categories')
+            .insert([payload]);
+          if (error) throw error;
+          showToast('Category added!');
+        }
+        hideCategoryForm();
+        await loadCategories();
+      } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+      } finally {
+        categorySaveBtn.disabled = false;
+      }
+    });
+
+    window.editCategory = async function(id) {
+      const cat = categories.find(c => c.id === id);
+      if (cat) showCategoryForm(cat);
+    };
+
+    window.deleteCategory = async function(id) {
+      if (!confirm('Delete this category? Products assigned to it will keep their category name.')) return;
+      try {
+        const { error } = await supabaseClient
+          .from('categories')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+        showToast('Category deleted!');
+        await loadCategories();
+      } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
       }
     };
 
@@ -1437,6 +1670,29 @@
       color: white;
     }
 
+    .back-to-site-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      background: transparent;
+      border: 2px solid var(--gold);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Poppins', sans-serif;
+      cursor: pointer;
+      color: var(--gold);
+      transition: var(--transition);
+      margin-left: 10px;
+      text-decoration: none;
+    }
+
+    .back-to-site-btn:hover {
+      background: var(--gold);
+      color: var(--dark);
+    }
+
     /* ===== Tab Content ===== */
     .admin-tab-content {
       display: none;
@@ -1631,7 +1887,8 @@
     }
 
     .form-group input,
-    .form-group textarea {
+    .form-group textarea,
+    .form-group select {
       width: 100%;
       padding: 11px 14px;
       border: 2px solid var(--cream-dark);
@@ -1644,7 +1901,8 @@
     }
 
     .form-group input:focus,
-    .form-group textarea:focus {
+    .form-group textarea:focus,
+    .form-group select:focus {
       outline: none;
       border-color: var(--gold);
       background: var(--white);

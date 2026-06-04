@@ -49,9 +49,7 @@
       transition: 0.35s ease;
       transform-origin: center;
     }
-    .hamburger.active span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
-    .hamburger.active span:nth-child(2) { opacity: 0; }
-    .hamburger.active span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+    /* Hamburger stays as 3 lines — no collapse animation */
 
     /* ===== Cart Icon in Header ===== */
     .header-cart-btn {
@@ -349,6 +347,11 @@
   <!-- ===== HEADER (Sticky) ===== -->
   <header>
     <div class="container">
+      <button class="hamburger" id="hamburger-btn" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
       <div id="branding">
         <h1><span class="highlight">Husayn </span>ProHerbal Medicine</h1>
       </div>
@@ -356,11 +359,6 @@
         <button class="header-cart-btn" id="header-cart-btn" aria-label="Open cart">
           <i class="fas fa-shopping-cart"></i>
           <span class="header-cart-badge" id="header-cart-badge">0</span>
-        </button>
-        <button class="hamburger" id="hamburger-btn" aria-label="Toggle navigation">
-          <span></span>
-          <span></span>
-          <span></span>
         </button>
       </div>
       <nav id="main-nav">
@@ -779,7 +777,6 @@
 
       // Sidebar toggle
       function closeSidebar() {
-        hamburger.classList.remove('active');
         mainNav.classList.remove('open');
         backdrop.classList.remove('active');
         document.body.style.overflow = '';
@@ -791,7 +788,6 @@
           if (isOpen) {
             closeSidebar();
           } else {
-            hamburger.classList.add('active');
             mainNav.classList.add('open');
             backdrop.classList.add('active');
             document.body.style.overflow = 'hidden';
