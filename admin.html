@@ -301,6 +301,23 @@
           </form>
         </div>
 
+        <!-- Product Search & Filter -->
+        <div class="admin-product-controls" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;align-items:center;">
+          <div style="position:relative;flex:1;min-width:220px;">
+            <i class="fas fa-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-light);font-size:14px;"></i>
+            <input type="text" id="admin-product-search" placeholder="Search products..." style="width:100%;padding:11px 14px 11px 38px;border:2px solid var(--cream-dark);border-radius:var(--radius-sm);font-size:14px;font-family:'Poppins',sans-serif;background:var(--cream);color:var(--text);transition:var(--transition);">
+          </div>
+          <select id="admin-product-category-filter" style="padding:11px 14px;border:2px solid var(--cream-dark);border-radius:var(--radius-sm);font-size:14px;font-family:'Poppins',sans-serif;background:var(--cream);color:var(--text);cursor:pointer;transition:var(--transition);">
+            <option value="all">All Categories</option>
+          </select>
+          <select id="admin-product-sort" style="padding:11px 14px;border:2px solid var(--cream-dark);border-radius:var(--radius-sm);font-size:14px;font-family:'Poppins',sans-serif;background:var(--cream);color:var(--text);cursor:pointer;transition:var(--transition);">
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="name-asc">Name A→Z</option>
+            <option value="name-desc">Name Z→A</option>
+          </select>
+        </div>
+
         <!-- Products Table -->
         <div class="table-container">
           <table class="admin-table" id="products-table">
@@ -731,11 +748,36 @@
 
     function renderProducts() {
       const tbody = document.getElementById('products-table-body');
-      if (!products.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-text">No products yet. Click &quot;Add Product&quot; to create one.</td></tr>';
+      let filtered = [...products];
+
+      // Apply search filter
+      const searchVal = (document.getElementById('admin-product-search')?.value || '').trim().toLowerCase();
+      if (searchVal) {
+        filtered = filtered.filter(p =>
+          (p.name || '').toLowerCase().includes(searchVal) ||
+          (p.category || '').toLowerCase().includes(searchVal) ||
+          (p.description || '').toLowerCase().includes(searchVal)
+        );
+      }
+
+      // Apply category filter
+      const catVal = document.getElementById('admin-product-category-filter')?.value || 'all';
+      if (catVal !== 'all') {
+        filtered = filtered.filter(p => (p.category || '').toLowerCase() === catVal.toLowerCase());
+      }
+
+      // Apply sort
+      const sortVal = document.getElementById('admin-product-sort')?.value || 'newest';
+      if (sortVal === 'newest') filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      else if (sortVal === 'oldest') filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      else if (sortVal === 'name-asc') filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      else if (sortVal === 'name-desc') filtered.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-text">' + (products.length ? 'No products match your filters.' : 'No products yet. Click &quot;Add Product&quot; to create one.') + '</td></tr>';
         return;
       }
-      tbody.innerHTML = products.map(p => `
+      tbody.innerHTML = filtered.map(p => `
         <tr>
           <td>${p.image_url ? '<img src="' + escapeHtml(p.image_url.split('?')[0]) + '" alt="" style="width:50px;height:50px;object-fit:cover;border-radius:6px;border:2px solid var(--cream-dark);">' : '<span style="color:var(--text-light);font-size:12px;">No image</span>'}</td>
           <td><strong>${escapeHtml(p.name)}</strong></td>
@@ -857,6 +899,14 @@
     addProductBtn.addEventListener('click', () => showProductForm());
 
     productCancelBtn.addEventListener('click', hideProductForm);
+
+    // Admin product search, filter, and sort controls
+    const adminSearch = document.getElementById('admin-product-search');
+    const adminCategoryFilter = document.getElementById('admin-product-category-filter');
+    const adminSort = document.getElementById('admin-product-sort');
+    if (adminSearch) adminSearch.addEventListener('input', () => renderProducts());
+    if (adminCategoryFilter) adminCategoryFilter.addEventListener('change', () => renderProducts());
+    if (adminSort) adminSort.addEventListener('change', () => renderProducts());
 
     productForm.addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -1037,8 +1087,18 @@
       categories.forEach(c => {
         select.innerHTML += `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`;
       });
-      // Restore previous selection if it still exists
       if (currentValue) select.value = currentValue;
+
+      // Also populate the admin product category filter dropdown
+      const filterSelect = document.getElementById('admin-product-category-filter');
+      if (filterSelect) {
+        const filterVal = filterSelect.value;
+        filterSelect.innerHTML = '<option value="all">All Categories</option>';
+        categories.forEach(c => {
+          filterSelect.innerHTML += `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`;
+        });
+        filterSelect.value = filterVal || 'all';
+      }
     }
 
     function showCategoryForm(category = null) {
