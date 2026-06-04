@@ -114,7 +114,37 @@ CREATE POLICY "Allow authenticated delete orders"
   ON orders FOR DELETE
   USING (auth.role() = 'authenticated');
 
--- 5. Create storage bucket for product images
+-- 5. Categories Table (used by admin category management)
+CREATE TABLE IF NOT EXISTS categories (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  icon TEXT DEFAULT 'fas fa-tag',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable Row Level Security
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+
+-- Allow anonymous read access (needed for shop category filter)
+CREATE POLICY "Allow anonymous read categories"
+  ON categories FOR SELECT
+  USING (true);
+
+-- Allow anonymous insert (admin panel)
+CREATE POLICY "Allow anonymous insert categories"
+  ON categories FOR INSERT
+  WITH CHECK (true);
+
+-- Allow authenticated full access
+CREATE POLICY "Allow authenticated update categories"
+  ON categories FOR UPDATE
+  USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow authenticated delete categories"
+  ON categories FOR DELETE
+  USING (auth.role() = 'authenticated');
+
+-- 6. Create storage bucket for product images
 -- Run this in Supabase Dashboard > Storage or via SQL:
 -- INSERT INTO storage.buckets (id, name, public) VALUES ('product-images', 'product-images', true);
 -- Or create it manually in the Storage section of your Supabase Dashboard.

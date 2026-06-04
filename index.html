@@ -445,35 +445,7 @@
       </div>
     </section>
 
-    <!-- Featured Products -->
-    <section id="boxes">
-      <div class="container">
-        <div class="box">
-          <img src="./image/honey.jpg">
-          <h3>Raw Honey</h3>
-          <p>It kills unwanted yeast, improves the color and texture, removes any crystallization and it extends the shelf life.</p>
-          <button class="add-to-cart-btn" data-product-id="raw-honey" data-product-name="Raw Honey" data-product-price="&#8358;5,000 / bottle" data-product-price-raw="5000" data-product-image="./image/honey.jpg">
-            <i class="fas fa-cart-plus"></i> Add to Cart
-          </button>
-        </div>
-        <div class="box">
-          <img src="./image/ginger.jpg">
-          <h3>Ginger</h3>
-          <p>It has been used to aid digestion, reduce nausea and help fight against the flu and common cold to name a few of its purpose.</p>
-          <button class="add-to-cart-btn" data-product-id="ginger" data-product-name="Ginger" data-product-price="&#8358;3,500 / pack" data-product-price-raw="3500" data-product-image="./image/ginger.jpg">
-            <i class="fas fa-cart-plus"></i> Add to Cart
-          </button>
-        </div>
-        <div class="box">
-          <img src="./image/coconut.webp" width="200px">
-          <h3>Coconut</h3>
-          <p>Coconut is highly nutritious, rich in fiber and packed with essential vitamins and minerals from culinary creations to magic beauty portions.</p>
-          <button class="add-to-cart-btn" data-product-id="coconut" data-product-name="Coconut Oil" data-product-price="&#8358;4,500 / jar" data-product-price-raw="4500" data-product-image="./image/coconut.webp">
-            <i class="fas fa-cart-plus"></i> Add to Cart
-          </button>
-        </div>
-      </div>
-    </section>
+
   </section>
 
   <!-- ================================================================ -->
@@ -775,11 +747,16 @@
       window.addEventListener('scroll', updateActiveLink, { passive: true });
       updateActiveLink();
 
-      // Sidebar toggle
+      // Sidebar toggle — compensate for scrollbar width to prevent shake
+      function getScrollbarWidth() {
+        return window.innerWidth - document.documentElement.clientWidth;
+      }
+
       function closeSidebar() {
         mainNav.classList.remove('open');
         backdrop.classList.remove('active');
         document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
       }
 
       if (hamburger) {
@@ -791,6 +768,8 @@
             mainNav.classList.add('open');
             backdrop.classList.add('active');
             document.body.style.overflow = 'hidden';
+            // Prevent layout shift from scrollbar disappearing
+            document.body.style.paddingRight = getScrollbarWidth() + 'px';
           }
         });
       }
@@ -899,28 +878,6 @@
       });
     }
 
-    // =============================================
-    // HOME PAGE FEATURED PRODUCTS ADD TO CART
-    // =============================================
-    document.querySelectorAll('#boxes .add-to-cart-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const product = {
-          id: this.dataset.productId,
-          name: this.dataset.productName,
-          price: this.dataset.productPrice,
-          priceRaw: this.dataset.productPriceRaw,
-          image_url: this.dataset.productImage
-        };
-        addToCart(product);
-        const originalHTML = this.innerHTML;
-        this.innerHTML = '<i class="fas fa-check"></i> Added!';
-        this.classList.add('added');
-        setTimeout(() => {
-          this.innerHTML = originalHTML;
-          this.classList.remove('added');
-        }, 1500);
-      });
-    });
 
     // =============================================
     // SHOP PRODUCT GRID
@@ -1127,39 +1084,41 @@
       populateCategories();
     }
 
-    function populateCategories() {
+    async function loadShopCategories() {
       const categorySelect = document.getElementById('shop-category-filter');
       if (!categorySelect) return;
-      // Extract categories from product names using common keywords
-      const categoryKeywords = {
-        'Honey': 'Honey',
-        'Ginger': 'Spices & Roots',
-        'Coconut': 'Oils',
-        'Oil': 'Oils',
-        'Tea': 'Tea & Blends',
-        'Dates': 'Fruits',
-        'Moringa': 'Herbal Powders',
-        'Powder': 'Herbal Powders',
-        'Frankincense': 'Aromatherapy',
-        'Seed': 'Seeds & Oils',
-        'Mix': 'Combos'
-      };
-      const categories = new Set();
-      allProducts.forEach(p => {
-        let matched = false;
-        for (const [keyword, cat] of Object.entries(categoryKeywords)) {
-          if (p.name.includes(keyword.toLowerCase())) {
-            categories.add(cat);
-            matched = true;
-            break;
+      try {
+        const { data, error } = await supabaseClient
+          .from('categories')
+          .select('name')
+          .order('name', { ascending: true });
+        if (error) throw error;
+        categorySelect.innerHTML = '<option value="all">All Categories</option>';
+        (data || []).forEach(cat => {
+          categorySelect.innerHTML += `<option value="${escapeHtml(cat.name).toLowerCase()}">${escapeHtml(cat.name)}</option>`;
+        });
+      } catch (err) {
+        console.warn('Failed to load categories from DB, using fallback:', err.message);
+        // Fallback: extract categories from product names
+        const categoryKeywords = {
+          'Honey': 'Honey', 'Ginger': 'Spices & Roots', 'Coconut': 'Oils',
+          'Oil': 'Oils', 'Tea': 'Tea & Blends', 'Dates': 'Fruits',
+          'Moringa': 'Herbal Powders', 'Powder': 'Herbal Powders',
+          'Frankincense': 'Aromatherapy', 'Seed': 'Seeds & Oils', 'Mix': 'Combos'
+        };
+        const cats = new Set();
+        allProducts.forEach(p => {
+          let matched = false;
+          for (const [kw, cat] of Object.entries(categoryKeywords)) {
+            if (p.name.includes(kw.toLowerCase())) { cats.add(cat); matched = true; break; }
           }
-        }
-        if (!matched) categories.add('Other');
-      });
-      categorySelect.innerHTML = '<option value="all">All Categories</option>';
-      [...categories].sort().forEach(cat => {
-        categorySelect.innerHTML += `<option value="${cat.toLowerCase()}">${cat}</option>`;
-      });
+          if (!matched) cats.add('Other');
+        });
+        categorySelect.innerHTML = '<option value="all">All Categories</option>';
+        [...cats].sort().forEach(c => {
+          categorySelect.innerHTML += `<option value="${c.toLowerCase()}">${c}</option>`;
+        });
+      }
     }
 
     function initShopFilter() {
@@ -1167,8 +1126,9 @@
       const categorySelect = document.getElementById('shop-category-filter');
       if (!searchInput || !categorySelect) return;
 
-      // Collect products after a short delay to ensure DOM is ready
+      // Load categories from Supabase + collect products after a short delay
       setTimeout(collectProducts, 300);
+      loadShopCategories();
 
       // Re-collect after DB products load (observer on grid changes)
       const grid = document.querySelector('.pricing-grid');
