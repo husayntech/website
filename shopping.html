@@ -275,6 +275,26 @@
       .shop-controls { flex-direction: column; }
       .tracking-form { flex-direction: column; }
     }
+
+    /* ===== Keyboard Shortcut Hints ===== */
+    .kbd-hints-overlay {
+      position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,0.6);
+      display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .kbd-hints-overlay.active { display: flex; }
+    .kbd-hints-panel {
+      background: var(--white); border-radius: var(--radius); max-width: 400px; width: 100%;
+      padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .kbd-hints-panel h3 { font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 20px; font-size: 22px; }
+    .kbd-hint { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--cream-dark); }
+    .kbd-hint:last-child { border-bottom: none; }
+    .kbd-hint span { font-size: 14px; color: var(--text); }
+    kbd {
+      background: var(--cream); border: 1px solid var(--cream-dark); border-radius: 4px;
+      padding: 3px 8px; font-size: 12px; font-family: monospace; color: var(--dark);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 <body>
@@ -306,15 +326,8 @@
       </div>
       <nav id="main-nav">
         <div class="sidebar-header">
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div>
-              <h2><i class="fas fa-leaf" style="color:var(--gold);margin-right:6px;"></i> Menu</h2>
-              <p>Navigate to any section</p>
-            </div>
-            <button id="sidebar-close-btn" aria-label="Close menu" style="background:none;border:none;color:rgba(255,255,255,0.6);font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
+          <h2><i class="fas fa-leaf" style="color:var(--gold);margin-right:6px;"></i> Menu</h2>
+          <p>Navigate to any section</p>
         </div>
         <ul id="nav-links">
           <li><a href="./index.html"><i class="fas fa-home"></i> Home</a></li>
@@ -468,9 +481,30 @@
     <div class="container">
       <h2><i class="fas fa-clock-rotate-left" style="color:var(--gold);margin-right:10px;"></i> Recent Orders</h2>
       <p>Your recent orders from this browser. Reorder with one click!</p>
+      <div class="shop-controls" style="max-width:600px;margin:0 auto 20px;">
+        <div class="search-wrapper">
+          <i class="fas fa-search"></i>
+          <input type="text" class="shop-search" id="recent-orders-search" placeholder="Search recent orders...">
+        </div>
+      </div>
       <div id="recent-orders-list"></div>
     </div>
   </section>
+
+
+  <!-- Keyboard Shortcut Hints Overlay -->
+  <div class="kbd-hints-overlay" id="kbd-hints-overlay">
+    <div class="kbd-hints-panel">
+      <h3><i class="fas fa-keyboard" style="color:var(--gold);margin-right:8px;"></i> Keyboard Shortcuts</h3>
+      <div class="kbd-hint"><span>Focus search</span><span><kbd>/</kbd> or <kbd>Ctrl+K</kbd></span></div>
+      <div class="kbd-hint"><span>Close modal</span><kbd>Esc</kbd></div>
+      <div class="kbd-hint"><span>Open cart</span><kbd>C</kbd></div>
+      <div class="kbd-hint"><span>Show shortcuts</span><kbd>?</kbd></div>
+      <div style="margin-top:20px;text-align:center;">
+        <button class="button_1" onclick="document.getElementById('kbd-hints-overlay').classList.remove('active')" style="padding:8px 24px;font-size:13px;">Close</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ===== FOOTER ===== -->
   <footer>
@@ -528,7 +562,6 @@
       const menuBtn = document.getElementById('menu-btn');
       const mainNav = document.getElementById('main-nav');
       const backdrop = document.getElementById('nav-backdrop');
-      const closeBtn = document.getElementById('sidebar-close-btn');
 
       function getScrollbarWidth() { return window.innerWidth - document.documentElement.clientWidth; }
 
@@ -538,6 +571,9 @@
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
       }
+
+      // Make closeSidebar accessible to other modules
+      window._closeSidebar = closeSidebar;
 
       if (menuBtn) {
         menuBtn.addEventListener('click', () => {
@@ -552,7 +588,6 @@
         });
       }
       if (backdrop) backdrop.addEventListener('click', closeSidebar);
-      if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSidebar(); });
       document.querySelectorAll('#nav-links a').forEach(l => l.addEventListener('click', closeSidebar));
     })();
@@ -861,27 +896,38 @@
     // =============================================
     (function initKeyboardShortcuts() {
       document.addEventListener('keydown', function(e) {
-        // Don't trigger shortcuts when typing in inputs
         const tag = e.target.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
-        // Escape: close product modal
+        // Escape: close hints, modal, or sidebar
         if (e.key === 'Escape') {
+          const kbdOverlay = document.getElementById('kbd-hints-overlay');
+          if (kbdOverlay && kbdOverlay.classList.contains('active')) {
+            kbdOverlay.classList.remove('active'); return;
+          }
           const modal = document.getElementById('product-modal');
           if (modal && modal.classList.contains('active')) {
-            closeProductModal();
-            e.preventDefault();
+            closeProductModal(); e.preventDefault();
           }
+          if (window._closeSidebar) window._closeSidebar();
         }
 
         // / or Ctrl+K: focus search bar
         if (e.key === '/' || (e.ctrlKey && e.key === 'k')) {
           e.preventDefault();
           const searchInput = document.getElementById('shop-search');
-          if (searchInput) {
-            searchInput.focus();
-            searchInput.select();
-          }
+          if (searchInput) { searchInput.focus(); searchInput.select(); }
+        }
+
+        // ?: show keyboard shortcut hints
+        if (e.key === '?') {
+          const kbdOverlay = document.getElementById('kbd-hints-overlay');
+          if (kbdOverlay) kbdOverlay.classList.toggle('active');
+        }
+
+        // C: open cart
+        if (e.key === 'c' || e.key === 'C') {
+          openCart();
         }
       });
     })();
@@ -892,9 +938,9 @@
     (function initRecentOrders() {
       const STORAGE_KEY = 'herbal-recent-orders';
       const listEl = document.getElementById('recent-orders-list');
+      const searchInput = document.getElementById('recent-orders-search');
       if (!listEl) return;
 
-      // Listen for new orders from cart checkout
       window.addEventListener('order-placed', function(e) {
         const order = e.detail;
         if (!order) return;
@@ -906,39 +952,61 @@
           date: new Date().toISOString(),
           status: 'pending'
         });
-        // Keep only last 10 orders
         if (orders.length > 10) orders.length = 10;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
         renderRecentOrders();
       });
 
       function getRecentOrders() {
-        try {
-          return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-        } catch { return []; }
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
       }
 
-      function renderRecentOrders() {
+      function renderRecentOrders(filter) {
         const orders = getRecentOrders();
-        if (!orders.length) {
-          listEl.innerHTML = '<div class="loading-text" style="text-align:center;padding:40px 0;color:var(--text-light);"><i class="fas fa-receipt" style="font-size:32px;margin-bottom:10px;display:block;color:var(--cream-dark);"></i>No recent orders yet. Place an order to see it here!</div>';
+        const filtered = filter ? orders.filter(o => {
+          const q = filter.toLowerCase();
+          const items = (o.items || []).map(i => i.name).join(' ').toLowerCase();
+          return items.includes(q) || (o.id || '').toLowerCase().includes(q) || (o.total || '').toLowerCase().includes(q);
+        }) : orders;
+        if (!filtered.length) {
+          listEl.innerHTML = '<div class="loading-text" style="text-align:center;padding:40px 0;color:var(--text-light);"><i class="fas fa-receipt" style="font-size:32px;margin-bottom:10px;display:block;color:var(--cream-dark);"></i>' + (filter ? 'No orders match your search.' : 'No recent orders yet. Place an order to see it here!') + '</div>';
           return;
         }
-        listEl.innerHTML = orders.map(o => {
+        listEl.innerHTML = filtered.map(o => {
           const items = o.items || [];
-          const itemsList = items.map(i => i.name + (i.quantity > 1 ? ' ×' + i.quantity : '')).join(', ') || 'N/A';
+          const itemsList = items.map(i => i.name + (i.quantity > 1 ? ' x' + i.quantity : '')).join(', ') || 'N/A';
           const date = new Date(o.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-          return '<div class="tracking-order-card">
-            <div class="tracking-order-header"><strong>Order #' + (o.id || 'N/A') + '</strong><span class="order-status-badge status-' + (o.status || 'pending') + '">' + (o.status || 'pending') + '</span></div>
-            <div class="tracking-order-items">' + itemsList + '</div>
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span class="tracking-order-date"><i class="fas fa-calendar"></i> ' + date + '</span>
-              <span style="font-weight:600;color:var(--primary);">' + (o.total || '') + '</span>
-            </div>
-          </div>';
+          const itemsJson = encodeURIComponent(JSON.stringify(items));
+          return '<div class="tracking-order-card">' +
+            '<div class="tracking-order-header"><strong>Order #' + (o.id || 'N/A') + '</strong><span class="order-status-badge status-' + (o.status || 'pending') + '">' + (o.status || 'pending') + '</span></div>' +
+            '<div class="tracking-order-items">' + itemsList + '</div>' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+              '<span class="tracking-order-date"><i class="fas fa-calendar"></i> ' + date + '</span>' +
+              '<span style="font-weight:600;color:var(--primary);">' + (o.total || '') + '</span>' +
+            '</div>' +
+            '<div style="margin-top:12px;text-align:right;">' +
+              '<button class="button_1 reorder-btn" data-items="' + itemsJson + '" style="padding:8px 16px;font-size:13px;"><i class="fas fa-redo"></i> Reorder</button>' +
+            '</div>' +
+          '</div>';
         }).join('');
+        listEl.querySelectorAll('.reorder-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            try {
+              const items = JSON.parse(decodeURIComponent(this.dataset.items));
+              items.forEach(item => {
+                addToCart({ id: item.id, name: item.name, price: item.price, priceRaw: item.priceRaw || '0', image_url: './image/proherbal.jpg' });
+              });
+              this.innerHTML = '<i class="fas fa-check"></i> Added!';
+              this.disabled = true;
+              setTimeout(() => { this.innerHTML = '<i class="fas fa-redo"></i> Reorder'; this.disabled = false; }, 1500);
+            } catch(e) { console.error('Reorder failed:', e); }
+          });
+        });
       }
 
+      if (searchInput) {
+        searchInput.addEventListener('input', function() { renderRecentOrders(this.value.trim()); });
+      }
       renderRecentOrders();
     })();
   </script>
