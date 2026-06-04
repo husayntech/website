@@ -532,49 +532,7 @@ export function closeCart() {
   }
 }
 
-// ============================================
-// Cart Badge (floating cart icon)
-// ============================================
 
-export function createCartFAB() {
-  if (document.getElementById('cart-fab')) return;
-
-  const fab = document.createElement('div');
-  fab.id = 'cart-fab';
-  fab.className = 'cart-fab';
-  fab.innerHTML = `
-    <button class="cart-fab-btn" id="cart-fab-btn" aria-label="Open cart">
-      <i class="fas fa-shopping-cart"></i>
-      <span class="cart-fab-badge" id="cart-fab-badge">0</span>
-    </button>
-  `;
-
-  document.body.appendChild(fab);
-
-  document.getElementById('cart-fab-btn').addEventListener('click', openCart);
-
-  // Update badge on cart changes
-  window.addEventListener('cart-updated', (e) => {
-    const badge = document.getElementById('cart-fab-badge');
-    if (badge) {
-      badge.textContent = e.detail.count;
-      badge.style.display = e.detail.count > 0 ? 'flex' : 'none';
-    }
-    // If the cart sidebar is already open, refresh its content live
-    const overlay = document.getElementById('cart-overlay');
-    if (overlay && overlay.classList.contains('active')) {
-      updateCartDisplay();
-    }
-  });
-
-  // Initial badge update
-  const count = getCartCount();
-  const badge = document.getElementById('cart-fab-badge');
-  if (badge) {
-    badge.textContent = count;
-    badge.style.display = count > 0 ? 'flex' : 'none';
-  }
-}
 
 // ============================================
 // Add to Cart Button Helper
@@ -633,8 +591,4 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// Auto-initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  createCartFAB();
-  renderCartSidebar();
-});
+
