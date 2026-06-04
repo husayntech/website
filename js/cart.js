@@ -351,6 +351,20 @@ async function handleCheckoutSubmit(e) {
     closeCart();
     showSuccessMessage(name);
     
+    // Dispatch order-placed event for recent orders tracking
+    window.dispatchEvent(new CustomEvent('order-placed', {
+      detail: {
+        id: 'ORD-' + Date.now(),
+        items: cart.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity
+        })),
+        total: orderTotal
+      }
+    }));
+    
     // Send order notification to admin WhatsApp
     sendWhatsAppOrderNotification(name, email, phone, address, notes, cart, orderTotal);
   } catch (err) {

@@ -39,6 +39,17 @@
       transition: var(--transition); flex-shrink: 0; z-index: 1002;
     }
     .header-cart-btn:hover { color: var(--white); background: rgba(255,255,255,0.1); }
+    .header-shop-link {
+      display: flex; align-items: center; gap: 5px;
+      color: rgba(255,255,255,0.85); text-decoration: none;
+      font-size: 13px; font-family: 'Poppins', sans-serif; font-weight: 600;
+      padding: 8px 12px; border-radius: var(--radius-sm);
+      border: 2px solid rgba(255,255,255,0.25); transition: var(--transition);
+      flex-shrink: 0; z-index: 1002;
+    }
+    .header-shop-link:hover, .header-shop-link.active {
+      color: var(--gold); border-color: var(--gold); background: rgba(255,255,255,0.12);
+    }
     .header-cart-badge {
       position: absolute; top: 0; right: 0; min-width: 18px; height: 18px;
       border-radius: 9px; background: var(--gold); color: var(--dark);
@@ -47,7 +58,15 @@
       animation: badgePop 0.3s ease;
     }
     .header-cart-badge.visible { display: flex; }
+    .header-cart-badge.pulse { animation: badgePulse 0.5s ease; }
+    @keyframes badgePulse {
+      0% { transform: scale(1); }
+      30% { transform: scale(1.5); box-shadow: 0 0 12px rgba(201, 168, 76, 0.7); }
+      60% { transform: scale(0.9); }
+      100% { transform: scale(1); }
+    }
     @keyframes badgePop { 0%{transform:scale(0.5)} 60%{transform:scale(1.2)} 100%{transform:scale(1)} }
+    .bottom-nav-badge.pulse { animation: badgePulse 0.5s ease; }
 
     /* ===== Sidebar Navigation ===== */
     header nav {
@@ -70,7 +89,6 @@
     header nav.open ul li:nth-child(2) { transition-delay: 0.10s; }
     header nav.open ul li:nth-child(3) { transition-delay: 0.14s; }
     header nav.open ul li:nth-child(4) { transition-delay: 0.18s; }
-    header nav.open ul li:nth-child(5) { transition-delay: 0.22s; }
     header nav.open ul li { opacity: 1; transform: translateX(0); }
     header nav ul li a {
       display: flex; align-items: center; gap: 14px; padding: 13px 18px;
@@ -215,7 +233,7 @@
     /* ===== Back to Top Button ===== */
     .back-to-top {
       position: fixed;
-      bottom: 80px;
+      bottom: 30px;
       right: 20px;
       width: 44px;
       height: 44px;
@@ -273,8 +291,13 @@
         <h1><span class="highlight">Husayn </span>ProHerbal Medicine</h1>
       </div>
       <div class="header-actions">
-        <a href="./index.html" class="header-cart-btn" aria-label="Back to home" style="text-decoration:none;display:flex;align-items:center;">
+        <a href="./index.html" class="header-shop-link" aria-label="Back to home">
           <i class="fas fa-home"></i>
+          <span>Home</span>
+        </a>
+        <a href="./shopping.html" class="header-shop-link active" aria-label="Go to shop">
+          <i class="fas fa-store"></i>
+          <span>Shop</span>
         </a>
         <button class="header-cart-btn" id="header-cart-btn" aria-label="Open cart">
           <i class="fas fa-shopping-cart"></i>
@@ -297,7 +320,6 @@
           <li><a href="./index.html"><i class="fas fa-home"></i> Home</a></li>
           <li><a href="./index.html#about"><i class="fas fa-users"></i> About</a></li>
           <li><a href="./index.html#services"><i class="fas fa-concierge-bell"></i> Services</a></li>
-          <li class="current"><a href="./shopping.html"><i class="fas fa-store"></i> Shopping</a></li>
           <li><a href="./index.html#contact"><i class="fas fa-envelope"></i> Contact Us</a></li>
         </ul>
       </nav>
@@ -441,6 +463,15 @@
     <i class="fas fa-arrow-up"></i>
   </button>
 
+  <!-- ===== RECENT ORDERS HISTORY ===== -->
+  <section id="recent-orders" class="order-tracking-section">
+    <div class="container">
+      <h2><i class="fas fa-clock-rotate-left" style="color:var(--gold);margin-right:10px;"></i> Recent Orders</h2>
+      <p>Your recent orders from this browser. Reorder with one click!</p>
+      <div id="recent-orders-list"></div>
+    </div>
+  </section>
+
   <!-- ===== FOOTER ===== -->
   <footer>
     <p>&trade; Husayn ProHerbal Medicine Copyright &copy; 2026</p>
@@ -467,17 +498,24 @@
     }
 
     // =============================================
-    // HEADER CART BADGE
+    // HEADER CART BADGE (with pulse animation)
     // =============================================
     (function initHeaderCartBadge() {
       const btn = document.getElementById('header-cart-btn');
       const badge = document.getElementById('header-cart-badge');
       if (!btn || !badge) return;
       btn.addEventListener('click', openCart);
+      let prevCount = getCartCount();
       function updateBadge() {
         const count = getCartCount();
         badge.textContent = count;
         badge.classList.toggle('visible', count > 0);
+        if (count > prevCount) {
+          badge.classList.remove('pulse');
+          void badge.offsetWidth;
+          badge.classList.add('pulse');
+        }
+        prevCount = count;
       }
       window.addEventListener('cart-updated', updateBadge);
       updateBadge();
@@ -786,12 +824,19 @@
         });
       }
 
+      let prevMobileCount = getCartCount();
       function updateBadge() {
         const count = getCartCount();
         if (mobileBadge) {
           mobileBadge.textContent = count;
           mobileBadge.classList.toggle('visible', count > 0);
+          if (count > prevMobileCount) {
+            mobileBadge.classList.remove('pulse');
+            void mobileBadge.offsetWidth;
+            mobileBadge.classList.add('pulse');
+          }
         }
+        prevMobileCount = count;
       }
       window.addEventListener('cart-updated', updateBadge);
       updateBadge();
@@ -809,6 +854,92 @@
       btn.addEventListener('click', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
+    })();
+
+    // =============================================
+    // KEYBOARD SHORTCUTS
+    // =============================================
+    (function initKeyboardShortcuts() {
+      document.addEventListener('keydown', function(e) {
+        // Don't trigger shortcuts when typing in inputs
+        const tag = e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+        // Escape: close product modal
+        if (e.key === 'Escape') {
+          const modal = document.getElementById('product-modal');
+          if (modal && modal.classList.contains('active')) {
+            closeProductModal();
+            e.preventDefault();
+          }
+        }
+
+        // / or Ctrl+K: focus search bar
+        if (e.key === '/' || (e.ctrlKey && e.key === 'k')) {
+          e.preventDefault();
+          const searchInput = document.getElementById('shop-search');
+          if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+          }
+        }
+      });
+    })();
+
+    // =============================================
+    // RECENT ORDERS HISTORY (localStorage)
+    // =============================================
+    (function initRecentOrders() {
+      const STORAGE_KEY = 'herbal-recent-orders';
+      const listEl = document.getElementById('recent-orders-list');
+      if (!listEl) return;
+
+      // Listen for new orders from cart checkout
+      window.addEventListener('order-placed', function(e) {
+        const order = e.detail;
+        if (!order) return;
+        const orders = getRecentOrders();
+        orders.unshift({
+          id: order.id || 'ORD-' + Date.now(),
+          items: order.items || [],
+          total: order.total || '',
+          date: new Date().toISOString(),
+          status: 'pending'
+        });
+        // Keep only last 10 orders
+        if (orders.length > 10) orders.length = 10;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+        renderRecentOrders();
+      });
+
+      function getRecentOrders() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        } catch { return []; }
+      }
+
+      function renderRecentOrders() {
+        const orders = getRecentOrders();
+        if (!orders.length) {
+          listEl.innerHTML = '<div class="loading-text" style="text-align:center;padding:40px 0;color:var(--text-light);"><i class="fas fa-receipt" style="font-size:32px;margin-bottom:10px;display:block;color:var(--cream-dark);"></i>No recent orders yet. Place an order to see it here!</div>';
+          return;
+        }
+        listEl.innerHTML = orders.map(o => {
+          const items = o.items || [];
+          const itemsList = items.map(i => i.name + (i.quantity > 1 ? ' ×' + i.quantity : '')).join(', ') || 'N/A';
+          const date = new Date(o.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          return '<div class="tracking-order-card">
+            <div class="tracking-order-header"><strong>Order #' + (o.id || 'N/A') + '</strong><span class="order-status-badge status-' + (o.status || 'pending') + '">' + (o.status || 'pending') + '</span></div>
+            <div class="tracking-order-items">' + itemsList + '</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="tracking-order-date"><i class="fas fa-calendar"></i> ' + date + '</span>
+              <span style="font-weight:600;color:var(--primary);">' + (o.total || '') + '</span>
+            </div>
+          </div>';
+        }).join('');
+      }
+
+      renderRecentOrders();
     })();
   </script>
 </body>
