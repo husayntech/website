@@ -320,9 +320,19 @@
 
         <!-- Products Table -->
         <div class="table-container">
+          <div id="admin-bulk-actions" style="display:none;padding:10px 18px;background:var(--cream);border-bottom:1px solid var(--cream-dark);align-items:center;gap:10px;flex-wrap:wrap;">
+            <span id="bulk-count" style="font-size:13px;font-weight:600;color:var(--text);"></span>
+            <button id="bulk-delete-btn" class="action-btn delete-btn" title="Delete selected" style="width:auto;padding:6px 14px;font-size:12px;">
+              <i class="fas fa-trash"></i> Delete Selected
+            </button>
+            <button id="bulk-deselect-btn" class="action-btn" style="width:auto;padding:6px 14px;font-size:12px;background:var(--cream-dark);color:var(--text);">
+              <i class="fas fa-times"></i> Deselect All
+            </button>
+          </div>
           <table class="admin-table" id="products-table">
             <thead>
               <tr>
+                <th style="width:40px;"><input type="checkbox" id="select-all-products" title="Select all"></th>
                 <th>Image</th>
                 <th>Name</th>
                 <th>Price</th>
@@ -332,9 +342,18 @@
               </tr>
             </thead>
             <tbody id="products-table-body">
-              <tr><td colspan="6" class="loading-text">Loading products...</td></tr>
+              <tr><td colspan="7" class="loading-text">Loading products...</td></tr>
             </tbody>
           </table>
+          <div id="products-pagination" style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-top:1px solid var(--cream-dark);flex-wrap:wrap;gap:10px;">
+            <span id="products-page-info" style="font-size:13px;color:var(--text-light);"></span>
+            <div id="products-page-btns" style="display:flex;gap:5px;"></div>
+          </div>
+          <div style="padding:10px 18px;border-top:1px solid var(--cream-dark);">
+            <button id="export-csv-btn" class="button_1" style="height:36px;font-size:12px;padding:0 16px;">
+              <i class="fas fa-download"></i> Export to CSV
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -732,7 +751,7 @@
     // =============================================
 
     async function loadProducts() {
-      const tbody = document.getElementById('products-table-body');        tbody.innerHTML = '<tr><td colspan="6" class="loading-text">Loading products...</td></tr>';
+      const tbody = document.getElementById('products-table-body');        tbody.innerHTML = '<tr><td colspan="7" class="loading-text">Loading products...</td></tr>';
       try {
         const { data, error } = await supabaseClient
           .from('products')
@@ -742,15 +761,17 @@
         products = data || [];
         renderProducts();
       } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="6" class="error-text">Failed to load products: ' + err.message + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="error-text">Failed to load products: ' + err.message + '</td></tr>';
       }
     }
 
-    function renderProducts() {
-      const tbody = document.getElementById('products-table-body');
-      let filtered = [...products];
+    let filteredProducts = [];
+    let currentPage = 1;
+    const PAGE_SIZE = 10;
+    let selectedProductIds = new Set();
 
-      // Apply search filter
+    function getFilteredProducts() {
+      let filtered = [...products];
       const searchVal = (document.getElementById('admin-product-search')?.value || '').trim().toLowerCase();
       if (searchVal) {
         filtered = filtered.filter(p =>
@@ -759,42 +780,150 @@
           (p.description || '').toLowerCase().includes(searchVal)
         );
       }
-
-      // Apply category filter
       const catVal = document.getElementById('admin-product-category-filter')?.value || 'all';
       if (catVal !== 'all') {
         filtered = filtered.filter(p => (p.category || '').toLowerCase() === catVal.toLowerCase());
       }
-
-      // Apply sort
       const sortVal = document.getElementById('admin-product-sort')?.value || 'newest';
-      if (sortVal === 'newest') filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      else if (sortVal === 'oldest') filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      if (sortVal === 'newest') filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      else if (sortVal === 'oldest') filtered.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
       else if (sortVal === 'name-asc') filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
       else if (sortVal === 'name-desc') filtered.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+      return filtered;
+    }
 
-      if (!filtered.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-text">' + (products.length ? 'No products match your filters.' : 'No products yet. Click &quot;Add Product&quot; to create one.') + '</td></tr>';
+    function renderProducts() {
+      const tbody = document.getElementById('products-table-body');
+      filteredProducts = getFilteredProducts();
+      const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+      if (currentPage > totalPages) currentPage = totalPages;
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const pageItems = filteredProducts.slice(start, start + PAGE_SIZE);
+
+      if (!filteredProducts.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-text">' + (products.length ? 'No products match your filters.' : 'No products yet. Click &quot;Add Product&quot; to create one.') + '</td></tr>';
+        updatePagination(0, 1, 0);
         return;
       }
-      tbody.innerHTML = filtered.map(p => `
+      tbody.innerHTML = pageItems.map(p => `
         <tr>
+          <td><input type="checkbox" class="product-checkbox" data-id="${p.id}" ${selectedProductIds.has(p.id) ? 'checked' : ''}></td>
           <td>${p.image_url ? '<img src="' + escapeHtml(p.image_url.split('?')[0]) + '" alt="" style="width:50px;height:50px;object-fit:cover;border-radius:6px;border:2px solid var(--cream-dark);">' : '<span style="color:var(--text-light);font-size:12px;">No image</span>'}</td>
           <td><strong>${escapeHtml(p.name)}</strong></td>
           <td><span class="price-tag">${escapeHtml(p.price)}</span></td>
           <td>${escapeHtml(p.category || '-')}</td>
           <td class="desc-cell">${escapeHtml((p.description || '').substring(0, 60))}${p.description && p.description.length > 60 ? '...' : ''}</td>
           <td class="actions-cell">
-            <button class="action-btn edit-btn" onclick="editProduct('${p.id}')" title="Edit">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="action-btn delete-btn" onclick="deleteProduct('${p.id}')" title="Delete">
-              <i class="fas fa-trash"></i>
-            </button>
+            <button class="action-btn edit-btn" onclick="editProduct('${p.id}')" title="Edit"><i class="fas fa-edit"></i></button>
+            <button class="action-btn delete-btn" onclick="deleteProduct('${p.id}')" title="Delete"><i class="fas fa-trash"></i></button>
           </td>
         </tr>
       `).join('');
+      updatePagination(filteredProducts.length, totalPages, currentPage);
+      updateBulkUI();
     }
+
+    function updatePagination(total, totalPages, page) {
+      document.getElementById('products-page-info').textContent = total > 0 ? `Showing ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} of ${total}` : '';
+      const btns = document.getElementById('products-page-btns');
+      if (!btns) return;
+      btns.innerHTML = '';
+      if (totalPages <= 1) return;
+      const mkBtn = (label, pg, disabled) => `<button class="action-btn" style="width:auto;padding:4px 12px;font-size:12px;${disabled ? 'opacity:0.4;pointer-events:none;' : ''}" onclick="goToPage(${pg})">${label}</button>`;
+      btns.innerHTML += mkBtn('&laquo;', page - 1, page <= 1);
+      for (let i = 1; i <= totalPages; i++) {
+        if (totalPages > 7 && i > 3 && i < totalPages - 2 && Math.abs(i - page) > 1) {
+          if (btns.innerHTML.slice(-3) !== '...') btns.innerHTML += '<span style="padding:4px 8px;font-size:12px;color:var(--text-light);">...</span>';
+          continue;
+        }
+        const active = i === page ? 'background:var(--primary);color:white;' : '';
+        btns.innerHTML += `<button class="action-btn" style="width:auto;padding:4px 12px;font-size:12px;${active}" onclick="goToPage(${i})">${i}</button>`;
+      }
+      btns.innerHTML += mkBtn('&raquo;', page + 1, page >= totalPages);
+    }
+
+    window.goToPage = function(pg) { currentPage = pg; renderProducts(); };
+
+    function updateBulkUI() {
+      const checkboxes = document.querySelectorAll('.product-checkbox');
+      const bulkActions = document.getElementById('admin-bulk-actions');
+      const bulkCount = document.getElementById('bulk-count');
+      const selected = document.querySelectorAll('.product-checkbox:checked');
+      if (selected.length > 0) {
+        bulkActions.style.display = 'flex';
+        bulkCount.textContent = `${selected.length} selected`;
+      } else {
+        bulkActions.style.display = 'none';
+      }
+    }
+
+    // Select all checkbox
+    document.getElementById('select-all-products').addEventListener('change', function() {
+      document.querySelectorAll('.product-checkbox').forEach(cb => {
+        cb.checked = this.checked;
+        if (this.checked) selectedProductIds.add(cb.dataset.id);
+        else selectedProductIds.delete(cb.dataset.id);
+      });
+      updateBulkUI();
+    });
+
+    // Individual checkbox clicks (delegated)
+    document.getElementById('products-table-body').addEventListener('change', function(e) {
+      if (e.target.classList.contains('product-checkbox')) {
+        if (e.target.checked) selectedProductIds.add(e.target.dataset.id);
+        else selectedProductIds.delete(e.target.dataset.id);
+        updateBulkUI();
+      }
+    });
+
+    // Bulk delete
+    document.getElementById('bulk-delete-btn').addEventListener('click', async function() {
+      if (!selectedProductIds.size) return;
+      if (!confirm(`Delete ${selectedProductIds.size} product(s)? This cannot be undone.`)) return;
+      try {
+        for (const id of selectedProductIds) {
+          const { error } = await supabaseClient.from('products').delete().eq('id', id);
+          if (error) throw error;
+        }
+        showToast(`Deleted ${selectedProductIds.size} product(s)!`);
+        selectedProductIds.clear();
+        await loadProducts();
+        await loadStats();
+      } catch (err) {
+        showToast('Bulk delete failed: ' + err.message, 'error');
+      }
+    });
+
+    // Deselect all
+    document.getElementById('bulk-deselect-btn').addEventListener('click', function() {
+      selectedProductIds.clear();
+      document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = false);
+      document.getElementById('select-all-products').checked = false;
+      updateBulkUI();
+    });
+
+    // Export to CSV
+    document.getElementById('export-csv-btn').addEventListener('click', function() {
+      if (!filteredProducts.length) { showToast('No products to export.', 'error'); return; }
+      const headers = ['Name', 'Price', 'Category', 'Description', 'Features', 'Image URL'];
+      const rows = filteredProducts.map(p => [
+        '"' + (p.name || '').replace(/"/g, '""') + '"',
+        '"' + (p.price || '').replace(/"/g, '""') + '"',
+        '"' + (p.category || '').replace(/"/g, '""') + '"',
+        '"' + (p.description || '').replace(/"/g, '""') + '"',
+        '"' + (p.features || '').replace(/"/g, '""') + '"',
+        '"' + (p.image_url || '').replace(/"/g, '""') + '"'
+      ]);
+      const csv = '\uFEFF' + headers.join(',') + '\n' + rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'products-' + new Date().toISOString().slice(0,10) + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('CSV exported!');
+    });
 
     function showProductForm(product = null) {
       productFormContainer.style.display = 'block';
@@ -904,9 +1033,9 @@
     const adminSearch = document.getElementById('admin-product-search');
     const adminCategoryFilter = document.getElementById('admin-product-category-filter');
     const adminSort = document.getElementById('admin-product-sort');
-    if (adminSearch) adminSearch.addEventListener('input', () => renderProducts());
-    if (adminCategoryFilter) adminCategoryFilter.addEventListener('change', () => renderProducts());
-    if (adminSort) adminSort.addEventListener('change', () => renderProducts());
+    if (adminSearch) adminSearch.addEventListener('input', () => { currentPage = 1; renderProducts(); });
+    if (adminCategoryFilter) adminCategoryFilter.addEventListener('change', () => { currentPage = 1; renderProducts(); });
+    if (adminSort) adminSort.addEventListener('change', () => { currentPage = 1; renderProducts(); });
 
     productForm.addEventListener('submit', async function(e) {
       e.preventDefault();
