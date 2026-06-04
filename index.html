@@ -365,6 +365,87 @@
 
 
 
+
+    /* ===== COMPREHENSIVE MOBILE FIXES ===== */
+    @media (max-width: 768px) {
+      header .container {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 6px;
+        padding: 8px 12px;
+        min-height: auto;
+        justify-content: space-between;
+        align-items: center;
+      }
+      header #branding {
+        flex: 1;
+        min-width: 0;
+        order: 1;
+      }
+      header #branding h1 {
+        font-size: 12px;
+        text-align: left;
+        margin-bottom: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .menu-btn {
+        order: 0;
+        padding: 5px 8px;
+        font-size: 0;
+        border: none;
+        flex-shrink: 0;
+      }
+      .menu-btn i { margin-right: 0; font-size: 18px; }
+      .header-actions {
+        order: 2;
+        gap: 2px;
+        flex-shrink: 0;
+      }
+      .header-shop-link {
+        padding: 5px 8px;
+        font-size: 0;
+        border: none;
+      }
+      .header-shop-link span { display: none; }
+      .header-shop-link i { margin-right: 0; font-size: 18px; }
+      .header-cart-btn { padding: 5px 8px; font-size: 18px; }
+      header nav { width: 280px; }
+      header nav ul { padding: 16px 12px; }
+      #showcase h1 { font-size: 24px; }
+      #showcase p { font-size: 13px; padding: 0 10px; }
+      #showcase { min-height: 280px; }
+      #showcase .container { padding: 40px 15px; }
+      #newsletter .container { padding: 15px; }
+      #newsletter input[type="email"] { width: 100%; min-width: 0; }
+      .trust-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .trust-item { padding: 18px 10px; }
+      .trust-item h4 { font-size: 13px; }
+      .trust-item p { font-size: 11px; }
+      .kbd-hints-panel { padding: 20px; margin: 10px; }
+      .kbd-hints-panel h3 { font-size: 18px; }
+      #main .container { padding: 20px 15px; }
+      .content-form { padding: 30px 0; gap: 15px; }
+      .content-form section { padding: 25px 15px; }
+      .media h1 { gap: 15px; }
+      .media h1 i { font-size: 24px; }
+    }
+    @media (max-width: 480px) {
+      header #branding h1 { font-size: 10px; }
+      .menu-btn { padding: 4px 6px; }
+      .menu-btn i { font-size: 16px; }
+      .header-shop-link { padding: 4px 6px; }
+      .header-shop-link i { font-size: 16px; }
+      .header-cart-btn { padding: 4px 6px; font-size: 16px; }
+      #showcase { min-height: 220px; }
+      #showcase h1 { font-size: 20px; }
+      #showcase .container { padding: 30px 12px; }
+      .trust-grid { gap: 8px; }
+      .trust-item { padding: 14px 8px; }
+      .trust-icon { width: 40px; height: 40px; }
+      .trust-icon i { font-size: 18px; }
+    }
   </style>
 </head>
 <body>

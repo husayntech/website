@@ -295,6 +295,124 @@
       padding: 3px 8px; font-size: 12px; font-family: monospace; color: var(--dark);
       box-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
+
+    /* ===== COMPREHENSIVE MOBILE FIXES ===== */
+    @media (max-width: 768px) {
+      header .container {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 6px;
+        padding: 8px 12px;
+        min-height: auto;
+        justify-content: space-between;
+        align-items: center;
+      }
+      header #branding {
+        flex: 1;
+        min-width: 0;
+        order: 1;
+      }
+      header #branding h1 {
+        font-size: 12px;
+        text-align: left;
+        margin-bottom: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .menu-btn {
+        order: 0;
+        padding: 5px 8px;
+        font-size: 0;
+        border: none;
+        flex-shrink: 0;
+      }
+      .menu-btn i { margin-right: 0; font-size: 18px; }
+      .header-actions {
+        order: 2;
+        gap: 2px;
+        flex-shrink: 0;
+      }
+      .header-shop-link {
+        padding: 5px 8px;
+        font-size: 0;
+        border: none;
+      }
+      .header-shop-link span { display: none; }
+      .header-shop-link i { margin-right: 0; font-size: 18px; }
+      .header-cart-btn { padding: 5px 8px; font-size: 18px; }
+      header nav { width: 280px; }
+      header nav ul { padding: 16px 12px; }
+      header nav ul li a { padding: 11px 14px; font-size: 13px; }
+
+      /* Shop section mobile */
+      .page-banner { padding: 30px 15px; }
+      .page-banner h1 { font-size: 22px; }
+      .page-banner p { font-size: 13px; }
+      #pricing-intro { padding: 20px 0 10px; }
+      #pricing-intro h1 { font-size: 22px; }
+      #pricing-intro p { font-size: 13px; padding: 0 10px; }
+      .shop-controls { flex-direction: column; gap: 10px; }
+      .search-wrapper { min-width: 100%; }
+      .shop-search { min-width: 100%; }
+      .shop-category-filter { width: 100%; }
+
+      /* Product cards mobile */
+      .pricing-card .card-header { padding: 18px 15px; }
+      .pricing-card .card-header h3 { font-size: 17px; }
+      .pricing-card .card-header .price { font-size: 24px; }
+      .pricing-card .card-body { padding: 12px 15px; }
+      .pricing-card .card-body p { font-size: 13px; }
+      .pricing-card .card-body ul li { font-size: 12px; padding: 6px 0; }
+      .pricing-card .card-footer { padding: 12px 15px; }
+
+      /* Modal mobile */
+      .product-modal { max-width: 95vw; }
+      .modal-image { height: 200px; }
+      .modal-body { padding: 20px; }
+      .modal-body h2 { font-size: 20px; }
+      .modal-price { font-size: 22px; }
+      .modal-desc { font-size: 13px; }
+      .modal-features li { font-size: 12px; padding: 8px 0; }
+
+      /* Order tracking mobile */
+      .tracking-form { flex-direction: column; }
+      .tracking-order-card { padding: 15px; }
+      .tracking-order-header { flex-direction: column; gap: 5px; align-items: flex-start; }
+      .order-tracking-section h2 { font-size: 24px; }
+
+      /* Recent orders mobile */
+      #recent-orders .tracking-order-card > div:last-child {
+        flex-direction: column; gap: 8px; align-items: flex-start;
+      }
+
+      /* Keyboard hints mobile */
+      .kbd-hints-panel { padding: 20px; margin: 10px; max-width: 95vw; }
+      .kbd-hints-panel h3 { font-size: 18px; }
+      .kbd-hint { flex-direction: column; gap: 4px; align-items: flex-start; }
+
+      /* Bulk orders mobile */
+      #newsletter { padding: 20px 0; }
+      #newsletter h1 { font-size: 20px; }
+      #newsletter form { flex-direction: column; width: 100%; }
+      #newsletter input[type="email"] { width: 100%; min-width: 0; }
+    }
+    @media (max-width: 480px) {
+      header #branding h1 { font-size: 10px; }
+      .menu-btn { padding: 4px 6px; }
+      .menu-btn i { font-size: 16px; }
+      .header-shop-link { padding: 4px 6px; }
+      .header-shop-link i { font-size: 16px; }
+      .header-cart-btn { padding: 4px 6px; font-size: 16px; }
+      .page-banner { padding: 20px 15px; }
+      .page-banner h1 { font-size: 18px; }
+      #pricing-intro h1 { font-size: 18px; }
+      .pricing-card .card-header h3 { font-size: 15px; }
+      .pricing-card .card-header .price { font-size: 20px; }
+      .modal-image { height: 160px; }
+      .modal-body { padding: 15px; }
+      .modal-body h2 { font-size: 18px; }
+    }
   </style>
 </head>
 <body>
