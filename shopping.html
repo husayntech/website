@@ -681,13 +681,9 @@
       const mainNav = document.getElementById('main-nav');
       const backdrop = document.getElementById('nav-backdrop');
 
-      function getScrollbarWidth() { return window.innerWidth - document.documentElement.clientWidth; }
-
       function closeSidebar() {
         mainNav.classList.remove('open');
         backdrop.classList.remove('active');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
       }
 
       // Make closeSidebar accessible to other modules
@@ -700,8 +696,6 @@
           } else {
             mainNav.classList.add('open');
             backdrop.classList.add('active');
-            document.body.style.overflow = 'hidden';
-            document.body.style.paddingRight = getScrollbarWidth() + 'px';
           }
         });
       }
@@ -955,13 +949,9 @@
 
       if (mobileCartBtn) mobileCartBtn.addEventListener('click', openCart);
 
-      function getScrollbarWidth() { return window.innerWidth - document.documentElement.clientWidth; }
-
       function closeSidebar() {
         mainNav.classList.remove('open');
         backdrop.classList.remove('active');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
       }
 
       if (mobileMenuBtn) {
@@ -971,8 +961,6 @@
           } else {
             mainNav.classList.add('open');
             backdrop.classList.add('active');
-            document.body.style.overflow = 'hidden';
-            document.body.style.paddingRight = getScrollbarWidth() + 'px';
           }
         });
       }

@@ -785,16 +785,9 @@
       window.addEventListener('scroll', updateActiveLink, { passive: true });
       updateActiveLink();
 
-      // Sidebar toggle — compensate for scrollbar width to prevent shake
-      function getScrollbarWidth() {
-        return window.innerWidth - document.documentElement.clientWidth;
-      }
-
       function closeSidebar() {
         mainNav.classList.remove('open');
         backdrop.classList.remove('active');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
       }
 
       if (hamburger) {
@@ -805,9 +798,6 @@
           } else {
             mainNav.classList.add('open');
             backdrop.classList.add('active');
-            document.body.style.overflow = 'hidden';
-            // Prevent layout shift from scrollbar disappearing
-            document.body.style.paddingRight = getScrollbarWidth() + 'px';
           }
         });
       }
@@ -842,13 +832,9 @@
 
       if (mobileCartBtn) mobileCartBtn.addEventListener('click', openCart);
 
-      function getScrollbarWidth() { return window.innerWidth - document.documentElement.clientWidth; }
-
       function closeSidebar() {
         mainNav.classList.remove('open');
         backdrop.classList.remove('active');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
       }
 
       if (mobileMenuBtn) {
@@ -858,8 +844,6 @@
           } else {
             mainNav.classList.add('open');
             backdrop.classList.add('active');
-            document.body.style.overflow = 'hidden';
-            document.body.style.paddingRight = getScrollbarWidth() + 'px';
           }
         });
       }
@@ -1004,8 +988,6 @@
             mainNav.classList.remove('open');
             const backdrop = document.getElementById('nav-backdrop');
             if (backdrop) backdrop.classList.remove('active');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
           }
         }
       });
